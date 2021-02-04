@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[32,)"
+issueTrackerURL="https://github.com/cech12/WoodenShears/issues"
+license="The MIT License (MIT)"
+[[mods]]
+    modId="woodenshears"
+    version="${file.jarVersion}"
+    displayName="Wooden Shears"
+    displayURL="https://github.com/cech12/WoodenShears"
+    logoFile="logo.png"
+    authors="Cech12"
+    description='''
+    A mod which adds Wooden Shears.
+    '''
+[[dependencies.woodenshears]]
+    modId="forge"
+    mandatory=true
+    versionRange="[35.1.23,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.woodenshears]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.16.4,)"
+    ordering="NONE"
+    side="BOTH"

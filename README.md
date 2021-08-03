@@ -5,7 +5,7 @@
 [![Build](https://github.com/cech12/WoodenShears/actions/workflows/build.yml/badge.svg)](https://github.com/cech12/WoodenShears/actions/workflows/build.yml)
 [![Test](https://github.com/cech12/WoodenShears/actions/workflows/test.yml/badge.svg)](https://github.com/cech12/WoodenShears/actions/workflows/test.yml)
 [![License](https://img.shields.io/github/license/cech12/WoodenShears)](http://opensource.org/licenses/MIT)
-![](https://img.shields.io/discord/752506676719910963.svg?style=flat&color=informational&logo=discord&label=Discord)](https://discord.gg/gRUFH5t)
+[![](https://img.shields.io/discord/752506676719910963.svg?style=flat&color=informational&logo=discord&label=Discord)](https://discord.gg/gRUFH5t)
 
 This is a **Minecraft Forge** mod that adds **Wooden Shears** to the game.
 

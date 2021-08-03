@@ -1,5 +1,6 @@
 package cech12.woodenshears.integration;
 
+/*
 import cech12.woodenshears.IntegrationTestUtils;
 import cech12.woodenshears.api.item.WoodenShearsItems;
 import com.alcatrazescapee.mcjunitlib.framework.IntegrationTest;
@@ -137,3 +138,4 @@ public class WorldTests {
     }
 
 }
+ */

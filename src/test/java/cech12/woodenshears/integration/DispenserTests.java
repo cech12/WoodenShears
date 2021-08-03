@@ -1,5 +1,6 @@
 package cech12.woodenshears.integration;
 
+/*
 import cech12.woodenshears.IntegrationTestUtils;
 import com.alcatrazescapee.mcjunitlib.framework.IntegrationTest;
 import com.alcatrazescapee.mcjunitlib.framework.IntegrationTestClass;
@@ -51,3 +52,4 @@ public class DispenserTests {
     }
 
 }
+ */

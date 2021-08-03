@@ -1,5 +1,6 @@
 package cech12.woodenshears.loottable;
 
+/*
 import cech12.woodenshears.api.item.WoodenShearsItems;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -83,3 +84,4 @@ public class BlockBreakingTest {
     }
 
 }
+ */

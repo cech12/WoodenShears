@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 - Update mod to 1.17.1-37.0.32
 
 ### Known Bugs
-- Interaction with Beehives, Pumpkins and Tripwire Hooks does not work for now.
+- Interaction with Beehives, Pumpkins and Tripwire Hooks do not work for now.
 
 ## [1.16.5-1.1.0.0] - 2021-08-03
 ### Added

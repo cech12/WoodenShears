@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Forge Recommended Versioning](https://mcforge.readthedocs.io/en/latest/conventions/versioning/).
 
+## [1.17.1-1.1.0.1] - 2021-08-31
+### Changed
+- Update mod to Forge 1.17.1-37.0.46
+
+### Fixed
+- Fixed interaction with Beehives, Pumpkins and Tripwire Hooks
+
 ## [1.17.1-1.1.0.0] - 2021-08-11
 ### Changed
 - Update mod to 1.17.1-37.0.32

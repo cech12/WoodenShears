@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[38,)"
+loaderVersion="[39,)"
 issueTrackerURL="https://github.com/cech12/WoodenShears/issues"
 license="The MIT License (MIT)"
 [[mods]]
@@ -15,12 +15,12 @@ license="The MIT License (MIT)"
 [[dependencies.woodenshears]]
     modId="forge"
     mandatory=true
-    versionRange="[38.0.4,)"
+    versionRange="[39.0.0,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.woodenshears]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.18,)"
+    versionRange="[1.18.1,)"
     ordering="NONE"
     side="BOTH"

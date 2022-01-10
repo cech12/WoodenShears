@@ -32,9 +32,6 @@ jobs:
       mod-id: woodenshears
     secrets:
       github-token: ${{ secrets.GITHUB_TOKEN }}
-    permissions:
-      actions: read
-      contents: write
   publish-curseforge:
     needs: codeql
     if: startsWith(github.ref, 'refs/tags/1.18')

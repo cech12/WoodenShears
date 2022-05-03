@@ -9,7 +9,7 @@ import net.minecraft.world.item.ShearsItem;
 public class WoodenShearsItem extends ShearsItem {
 
     public WoodenShearsItem() {
-        super((new Item.Properties()).tab(CreativeModeTab.TAB_TOOLS));
+        super((new Item.Properties()).stacksTo(1).tab(CreativeModeTab.TAB_TOOLS));
     }
 
     @Override

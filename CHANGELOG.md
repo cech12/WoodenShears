@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Forge Recommended Versioning](https://mcforge.readthedocs.io/en/latest/conventions/versioning/).
 
+## [1.18.2-1.2.1.1] - 2022-05-04
+### Fixed
+- Fixed that wooden shears could be stacked
+
 ## [1.18.2-1.2.1.0] - 2022-05-03
 ### Changed
 - Update mod to Forge 1.18.2-40.1.12 (fix breaking sound bug)

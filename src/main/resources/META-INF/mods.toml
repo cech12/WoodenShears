@@ -15,7 +15,7 @@ license="The MIT License (MIT)"
 [[dependencies.woodenshears]]
     modId="forge"
     mandatory=true
-    versionRange="[40.1.2,)"
+    versionRange="[40.1.12,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.woodenshears]]

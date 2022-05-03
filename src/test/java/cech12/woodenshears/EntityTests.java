@@ -51,10 +51,9 @@ public class EntityTests {
                             if (!result.getResult().consumesAction()) {
                                 test.fail("Wrong InteractionResult after using wooden shears on a " + entityName + ": " + result.getResult());
                             }
-                            //TODO bug in forge: shears stack is damaged even if the player is creative (but the stack is not put into the hand - no effect)
-                            //if (isCreative && result.getObject().getDamageValue() != 0) {
-                            //    test.fail("The wooden shears were damaged after creative interacting with a " + entityName);
-                            //}
+                            if (isCreative && result.getObject().getDamageValue() != 0) {
+                                test.fail("The wooden shears were damaged after creative interacting with a " + entityName);
+                            }
                             if (!isCreative && result.getObject().getDamageValue() == 0) {
                                 test.fail("The wooden shears were not damaged after survival interacting with a " + entityName);
                             }

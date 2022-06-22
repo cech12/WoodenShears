@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Forge Recommended Versioning](https://mcforge.readthedocs.io/en/latest/conventions/versioning/).
 
+## [1.19-1.3.0.0] - 2022-06-22
+### Changed
+- Update mod to Forge 1.19-41.0.45
+
 ## [1.18.2-1.2.1.2] - 2022-05-31
 ### Added
 - Chinese (zh_cn) language support #3 (thanks to rentommy)

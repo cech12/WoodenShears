@@ -14,12 +14,20 @@ public class WoodenShearsItem extends ShearsItem {
 
     @Override
     public boolean isDamageable(ItemStack stack) {
-        return ServerConfig.DURABILITY.get() > 0;
+        try {
+            return ServerConfig.DURABILITY.get() > 0;
+        } catch (IllegalStateException ex) {
+            return true;
+        }
     }
 
     @Override
     public int getMaxDamage(ItemStack stack) {
-        return ServerConfig.DURABILITY.get();
+        try {
+            return ServerConfig.DURABILITY.get();
+        } catch (IllegalStateException ex) {
+            return ServerConfig.DEFAULT_DURABILITY;
+        }
     }
 
 }

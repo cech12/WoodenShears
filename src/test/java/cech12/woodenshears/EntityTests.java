@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraftforge.common.IForgeShearable;
 import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ public class EntityTests {
         boolean[] creativeStates = { false, true };
         for (EntityType<?> entityType : SHEARABLE_ENTITIES) {
             for (boolean isCreative : creativeStates) {
-                String entityName = Objects.requireNonNull(entityType.getRegistryName()).getPath();
+                String entityName = Objects.requireNonNull(ForgeRegistries.ENTITIES.getKey(entityType)).getPath();
                 String testName = "test" + ((isCreative) ? "creative" : "survival") + "shearing" + entityName;
                 testFunctions.add(new TestFunction(
                         "defaultBatch",

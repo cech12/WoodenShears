@@ -18,7 +18,7 @@ import java.util.UUID;
 public class ModTestHelper {
 
     public static ServerPlayer makeMockCreativePlayer(GameTestHelper helper) {
-        return new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), new GameProfile(UUID.randomUUID(), "test-mock-creative-player")) {
+        return new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), new GameProfile(UUID.randomUUID(), "test-mock-creative-player"), null) {
             public boolean isSpectator() {
                 return false;
             }
@@ -38,7 +38,7 @@ public class ModTestHelper {
     }
 
     public static ServerPlayer makeMockSurvivalPlayer(GameTestHelper helper) {
-        return new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), new GameProfile(UUID.randomUUID(), "test-mock-survival-player")) {
+        return new ServerPlayer(helper.getLevel().getServer(), helper.getLevel(), new GameProfile(UUID.randomUUID(), "test-mock-survival-player"), null) {
             public boolean isSpectator() {
                 return false;
             }

@@ -1,7 +1,6 @@
 package cech12.woodenshears.item;
 
 import cech12.woodenshears.config.ServerConfig;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShearsItem;
@@ -9,7 +8,7 @@ import net.minecraft.world.item.ShearsItem;
 public class WoodenShearsItem extends ShearsItem {
 
     public WoodenShearsItem() {
-        super((new Item.Properties()).stacksTo(1).tab(CreativeModeTab.TAB_TOOLS));
+        super((new Item.Properties()).stacksTo(1));
     }
 
     @Override

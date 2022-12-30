@@ -3,8 +3,10 @@ package cech12.woodenshears;
 import cech12.woodenshears.config.ServerConfig;
 import cech12.woodenshears.item.WoodenShearsItem;
 import net.minecraft.core.dispenser.ShearsDispenseItemBehavior;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraftforge.event.CreativeModeTabEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -41,6 +43,13 @@ public class WoodenShearsMod {
     @SubscribeEvent
     public static void registerDispenseBehavior(FMLCommonSetupEvent event) {
         DispenserBlock.registerBehavior(WOODEN_SHEARS.get(), new ShearsDispenseItemBehavior());
+    }
+
+    @SubscribeEvent
+    public static void addItemsToTabs(CreativeModeTabEvent.BuildContents event) {
+        if (event.getTab() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(WOODEN_SHEARS);
+        }
     }
 
 }

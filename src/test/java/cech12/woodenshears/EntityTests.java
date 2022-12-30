@@ -27,12 +27,12 @@ public class EntityTests {
     private static final EntityType<?>[] SHEARABLE_ENTITIES = {EntityType.SHEEP, EntityType.MOOSHROOM, EntityType.SNOW_GOLEM};
 
     @GameTestGenerator
-    public static List<TestFunction> generateMilkingTests() {
+    public static List<TestFunction> generateShearingTests() {
         List<TestFunction> testFunctions = new ArrayList<>();
         boolean[] creativeStates = { false, true };
         for (EntityType<?> entityType : SHEARABLE_ENTITIES) {
             for (boolean isCreative : creativeStates) {
-                String entityName = Objects.requireNonNull(ForgeRegistries.ENTITIES.getKey(entityType)).getPath();
+                String entityName = Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.getKey(entityType)).getPath();
                 String testName = "test" + ((isCreative) ? "creative" : "survival") + "shearing" + entityName;
                 testFunctions.add(new TestFunction(
                         "defaultBatch",

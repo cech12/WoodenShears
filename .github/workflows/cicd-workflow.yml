@@ -56,6 +56,7 @@ jobs:
       curseforge-id: 443192
       game-versions: |
         1.19.3
+        1.19.4
       release-type: release
     secrets:
       curseforge-token: ${{ secrets.CURSEFORGE_API_KEY }}
@@ -69,6 +70,7 @@ jobs:
       modrinth-id: J3VVx8dO
       game-versions: |
         1.19.3
+        1.19.4
       release-type: release
     secrets:
       github-token: ${{ secrets.GITHUB_TOKEN }}

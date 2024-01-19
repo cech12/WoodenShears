@@ -1,19 +1,17 @@
 package de.cech12.woodenshears.mixin;
 
-import de.cech12.woodenshears.Constants;
 import de.cech12.woodenshears.item.WoodenShearsItem;
 import de.cech12.woodenshears.platform.Services;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import java.lang.reflect.Field;
 
 /**
  * Mixin for the Item class to enable the possibility to configure the item's durability.
@@ -21,6 +19,7 @@ import java.lang.reflect.Field;
 @Mixin(Item.class)
 public class MixinItem {
 
+    @Mutable
     @Final
     @Shadow
     private int maxDamage;
@@ -37,13 +36,7 @@ public class MixinItem {
         if (maxDamage == durability) {
             return;
         }
-        try {
-            Field maxDamageField = Item.class.getDeclaredField("maxDamage");
-            maxDamageField.setAccessible(true);
-            maxDamageField.set(this, durability);
-        } catch (NoSuchFieldException | IllegalAccessException ex) {
-            Constants.LOG.error("Failed to set maxDamage of wooden Shears.", ex);
-        }
+        maxDamage = durability;
     }
 
     /**

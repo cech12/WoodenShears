@@ -13,25 +13,26 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 
 /**
  * Mod class for the Forge loader.
  */
+@SuppressWarnings("unused")
 @Mod(Constants.MOD_ID)
 @Mod.EventBusSubscriber(modid= Constants.MOD_ID, bus= Mod.EventBusSubscriber.Bus.MOD)
-public class WoodenShearsMod {
+public class ForgeWoodenShearsMod {
 
     /** mod specific item registry */
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Constants.MOD_ID);
 
-    /** wooden shears item registry object */
-    public static final RegistryObject<Item> WOODEN_SHEARS = ITEMS.register("wooden_shears", WoodenShearsItem::new);
+    static {
+        Constants.WOODEN_SHEARS = ITEMS.register("wooden_shears", WoodenShearsItem::new);
+    }
 
     /**
      * Constructor of a mod instance.
      */
-    public WoodenShearsMod() {
+    public ForgeWoodenShearsMod() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         ITEMS.register(modEventBus);
         CommonLoader.init();
@@ -43,7 +44,7 @@ public class WoodenShearsMod {
      */
     @SubscribeEvent
     public static void registerDispenseBehavior(FMLCommonSetupEvent event) {
-        DispenserBlock.registerBehavior(WOODEN_SHEARS.get(), new ShearsDispenseItemBehavior());
+        DispenserBlock.registerBehavior(Constants.WOODEN_SHEARS.get(), new ShearsDispenseItemBehavior());
     }
 
     /**
@@ -53,7 +54,7 @@ public class WoodenShearsMod {
     @SubscribeEvent
     public static void addItemsToTabs(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(WOODEN_SHEARS);
+            event.accept(Constants.WOODEN_SHEARS);
         }
     }
 

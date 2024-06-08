@@ -4,19 +4,26 @@ import de.cech12.woodenshears.item.WoodenShearsItem;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.core.Registry;
+import net.minecraft.core.dispenser.ShearsDispenseItemBehavior;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.DispenserBlock;
 
 /**
  * Mod class for the Fabric loader.
  */
-public class WoodenShearsMod implements ModInitializer {
+@SuppressWarnings("unused")
+public class FabricWoodenShearsMod implements ModInitializer {
 
     /** wooden shears item registry object */
 
     public static final Item WOODEN_SHEARS = Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(Constants.MOD_ID, "wooden_shears"), new WoodenShearsItem());
+
+    static {
+        Constants.WOODEN_SHEARS = () -> WOODEN_SHEARS;
+    }
 
     /**
      * Initialization of a mod instance.
@@ -28,8 +35,8 @@ public class WoodenShearsMod implements ModInitializer {
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(content -> {
             content.accept(WOODEN_SHEARS);
         });
-        //register dispense behavior (is done by wsmlmb)
-        //DispenserBlock.registerBehavior(WOODEN_SHEARS, new ShearsDispenseItemBehavior());
+        //register dispense behavior
+        DispenserBlock.registerBehavior(WOODEN_SHEARS, new ShearsDispenseItemBehavior());
     }
 
 }

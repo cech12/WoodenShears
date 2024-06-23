@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Forge Recommended Versioning](https://mcforge.readthedocs.io/en/latest/conventions/versioning/).
 
+## [1.20.6-2.3.1.0] - 2024-06-23
+### Changed
+- updated Russian (ru_ru) language support #16 (thanks to Alexander317)
+
 ## [1.20.6-2.3.0.1] - 2024-06-08
 ### Fixed
 - wooden shears could not be enchanted (all loaders)

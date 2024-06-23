@@ -1,5 +1,6 @@
 package de.cech12.woodenshears;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,5 +23,9 @@ public class Constants {
     public static Supplier<Item> WOODEN_SHEARS;
 
     private Constants() {}
+
+    public static ResourceLocation id(String name) {
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, name);
+    }
 
 }

@@ -6,9 +6,7 @@
     "# "
   ],
   "key": {
-    "#": {
-      "tag": "minecraft:planks"
-    }
+    "#": "#minecraft:planks"
   },
   "result": {
     "id": "woodenshears:wooden_shears"

@@ -6,9 +6,12 @@ import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.dispenser.ShearsDispenseItemBehavior;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.DispenserBlock;
+
+import java.util.function.Function;
 
 /**
  * Mod class for the Fabric loader.
@@ -18,10 +21,15 @@ public class FabricWoodenShearsMod implements ModInitializer {
 
     /** wooden shears item registry object */
 
-    public static final Item WOODEN_SHEARS = Registry.register(BuiltInRegistries.ITEM, Constants.id("wooden_shears"), new WoodenShearsItem());
+    public static final Item WOODEN_SHEARS = registerItem("wooden_shears", WoodenShearsItem::new);
 
     static {
         Constants.WOODEN_SHEARS = () -> WOODEN_SHEARS;
+    }
+
+    private static Item registerItem(String name, Function<Item.Properties, Item> itemConstructor) {
+        ResourceKey<Item> resourceKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), Constants.id(name));
+        return Registry.register(BuiltInRegistries.ITEM, resourceKey, itemConstructor.apply(new Item.Properties().setId(resourceKey)));
     }
 
     /**

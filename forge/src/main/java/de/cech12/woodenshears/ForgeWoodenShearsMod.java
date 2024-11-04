@@ -2,17 +2,21 @@ package de.cech12.woodenshears;
 
 import de.cech12.woodenshears.item.WoodenShearsItem;
 import net.minecraft.core.dispenser.ShearsDispenseItemBehavior;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+
+import java.util.function.Function;
 
 /**
  * Mod class for the Forge loader.
@@ -26,15 +30,18 @@ public class ForgeWoodenShearsMod {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Constants.MOD_ID);
 
     static {
-        Constants.WOODEN_SHEARS = ITEMS.register("wooden_shears", WoodenShearsItem::new);
+        Constants.WOODEN_SHEARS = registerItem("wooden_shears", WoodenShearsItem::new);
+    }
+
+    private static RegistryObject<Item> registerItem(String name, Function<Item.Properties, Item> itemConstructor) {
+        return ITEMS.register(name, () -> itemConstructor.apply(new Item.Properties().setId(ResourceKey.create(BuiltInRegistries.ITEM.key(), Constants.id(name)))));
     }
 
     /**
      * Constructor of a mod instance.
      */
-    public ForgeWoodenShearsMod() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        ITEMS.register(modEventBus);
+    public ForgeWoodenShearsMod(FMLJavaModLoadingContext context) {
+        ITEMS.register(context.getModEventBus());
         CommonLoader.init();
     }
 

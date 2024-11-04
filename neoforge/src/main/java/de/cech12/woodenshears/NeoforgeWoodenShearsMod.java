@@ -24,7 +24,7 @@ public class NeoforgeWoodenShearsMod {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Constants.MOD_ID);
 
     static {
-        Constants.WOODEN_SHEARS = ITEMS.register("wooden_shears", NeoforgeWoodenShearsItem::new);
+        Constants.WOODEN_SHEARS = ITEMS.registerItem("wooden_shears", NeoforgeWoodenShearsItem::new);
     }
 
     /**

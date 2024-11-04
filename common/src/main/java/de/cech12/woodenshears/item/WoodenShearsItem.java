@@ -11,8 +11,8 @@ public class WoodenShearsItem extends ShearsItem {
     /**
      * Constructs a WoodenShearsItem by configure it to stack to one item.
      */
-    public WoodenShearsItem() {
-        super((new Properties()).stacksTo(1).component(DataComponents.TOOL, ShearsItem.createToolProperties()));
+    public WoodenShearsItem(Properties properties) {
+        super(properties.stacksTo(1).component(DataComponents.TOOL, ShearsItem.createToolProperties()));
     }
 
 }

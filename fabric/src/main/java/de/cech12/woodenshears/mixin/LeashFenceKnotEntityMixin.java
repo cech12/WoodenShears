@@ -2,7 +2,7 @@ package de.cech12.woodenshears.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import de.cech12.ceramicshears.item.CeramicShearsItem;
+import de.cech12.woodenshears.item.WoodenShearsItem;
 import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -15,7 +15,7 @@ public class LeashFenceKnotEntityMixin {
 
     @WrapOperation(at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;is(Lnet/minecraft/world/item/Item;)Z"), method = "interact")
     private boolean isShears(ItemStack stack, Item item, Operation<Boolean> original) {
-        return original.call(stack, item) || (item == Items.SHEARS && stack.getItem() instanceof CeramicShearsItem);
+        return original.call(stack, item) || (item == Items.SHEARS && stack.getItem() instanceof WoodenShearsItem);
     }
 
 }

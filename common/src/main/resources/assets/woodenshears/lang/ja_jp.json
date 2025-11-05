@@ -1,0 +1,10 @@
+{
+  "item.woodenshears.wooden_shears": "木のハサミ",
+
+  "text.autoconfig.woodenshears.option.DURABILITY": "木のハサミの耐久値",
+  "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[0]": "§6§l木のハサミの耐久値",
+  "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[1]": "木のハサミの最大耐久値を定義します。",
+  "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[2]": "§7§o0：耐久値を無効化",
+  "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[3]": "§7§o最小値：0 最大値：10000",
+  "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[4]": "§7§oデフォルト値：50"
+}

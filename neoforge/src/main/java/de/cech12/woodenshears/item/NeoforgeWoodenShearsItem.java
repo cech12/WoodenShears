@@ -1,7 +1,9 @@
 package de.cech12.woodenshears.item;
 
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class NeoforgeWoodenShearsItem extends WoodenShearsItem {
 
@@ -13,6 +15,11 @@ public class NeoforgeWoodenShearsItem extends WoodenShearsItem {
     @Override
     public int getMaxDamage(@NotNull ItemStack stack) {
         return stack.getMaxDamage(); //references to mixed in method
+    }
+
+    @Override
+    public int getBurnTime(@NotNull ItemStack itemStack, @Nullable RecipeType<?> recipeType) {
+        return this.getShearsBurnTime();
     }
 
 }

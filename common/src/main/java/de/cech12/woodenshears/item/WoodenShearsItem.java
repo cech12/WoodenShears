@@ -15,4 +15,9 @@ public class WoodenShearsItem extends ShearsItem {
         super((new Properties()).stacksTo(1).component(DataComponents.TOOL, ShearsItem.createToolProperties()));
     }
 
+    //used by mixins & implementations of this class
+    public int getShearsBurnTime() {
+        return 200; //should burn as long as a wooden tool
+    }
+
 }

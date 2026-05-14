@@ -3,6 +3,7 @@ package de.cech12.woodenshears;
 import de.cech12.woodenshears.item.WoodenShearsItem;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
+import net.fabricmc.fabric.api.registry.FuelValueEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.dispenser.ShearsDispenseItemBehavior;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -44,6 +45,8 @@ public class FabricWoodenShearsMod implements ModInitializer {
         });
         //register dispense behavior
         DispenserBlock.registerBehavior(WOODEN_SHEARS, new ShearsDispenseItemBehavior());
+        //register fuel burn time
+        FuelValueEvents.BUILD.register((builder, context) -> builder.add(WOODEN_SHEARS, ((WoodenShearsItem) WOODEN_SHEARS).getShearsBurnTime()));
     }
 
 }

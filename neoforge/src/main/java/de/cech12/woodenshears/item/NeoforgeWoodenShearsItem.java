@@ -13,16 +13,6 @@ public class NeoforgeWoodenShearsItem extends WoodenShearsItem {
     }
 
     @Override
-    public boolean isDamageable(@NotNull ItemStack stack) {
-        return stack.isDamageableItem(); //references to mixed in method
-    }
-
-    @Override
-    public int getMaxDamage(@NotNull ItemStack stack) {
-        return stack.getMaxDamage(); //references to mixed in method
-    }
-
-    @Override
     public int getBurnTime(@NotNull ItemStack itemStack, @Nullable RecipeType<?> recipeType, @NotNull FuelValues fuelValues) {
         return this.getShearsBurnTime();
     }

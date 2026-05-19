@@ -29,9 +29,7 @@ public class ForgeWoodenShearsMod {
     /** mod specific item registry */
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Constants.MOD_ID);
 
-    static {
-        Constants.WOODEN_SHEARS = registerItem("wooden_shears", ForgeWoodenShearsItem::new);
-    }
+    public static final RegistryObject<Item> WOODEN_SHEARS = registerItem("wooden_shears", ForgeWoodenShearsItem::new);
 
     private static RegistryObject<Item> registerItem(String name, Function<Item.Properties, Item> itemConstructor) {
         return ITEMS.register(name, () -> itemConstructor.apply(new Item.Properties().setId(ResourceKey.create(BuiltInRegistries.ITEM.key(), Constants.id(name)))));
@@ -51,7 +49,7 @@ public class ForgeWoodenShearsMod {
      */
     @SubscribeEvent
     public static void registerDispenseBehavior(FMLCommonSetupEvent event) {
-        DispenserBlock.registerBehavior(Constants.WOODEN_SHEARS.get(), new ShearsDispenseItemBehavior());
+        DispenserBlock.registerBehavior(WOODEN_SHEARS.get(), new ShearsDispenseItemBehavior());
     }
 
     /**
@@ -61,7 +59,7 @@ public class ForgeWoodenShearsMod {
     @SubscribeEvent
     public static void addItemsToTabs(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(Constants.WOODEN_SHEARS);
+            event.accept(WOODEN_SHEARS);
         }
     }
 

@@ -3,6 +3,7 @@ package de.cech12.woodenshears;
 import de.cech12.woodenshears.item.NeoforgeWoodenShearsItem;
 import net.minecraft.core.dispenser.ShearsDispenseItemBehavior;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -10,6 +11,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
@@ -23,9 +25,7 @@ public class NeoforgeWoodenShearsMod {
     /** mod specific item registry */
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Constants.MOD_ID);
 
-    static {
-        Constants.WOODEN_SHEARS = ITEMS.registerItem("wooden_shears", NeoforgeWoodenShearsItem::new);
-    }
+    public static final DeferredItem<Item> WOODEN_SHEARS = ITEMS.registerItem("wooden_shears", NeoforgeWoodenShearsItem::new);
 
     /**
      * Constructor of a mod instance.
@@ -41,7 +41,7 @@ public class NeoforgeWoodenShearsMod {
      */
     @SubscribeEvent
     public static void registerDispenseBehavior(FMLCommonSetupEvent event) {
-        DispenserBlock.registerBehavior(Constants.WOODEN_SHEARS.get(), new ShearsDispenseItemBehavior());
+        DispenserBlock.registerBehavior(WOODEN_SHEARS.get(), new ShearsDispenseItemBehavior());
     }
 
     /**
@@ -51,7 +51,7 @@ public class NeoforgeWoodenShearsMod {
     @SubscribeEvent
     public static void addItemsToTabs(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(Constants.WOODEN_SHEARS.get());
+            event.accept(WOODEN_SHEARS.get());
         }
     }
 

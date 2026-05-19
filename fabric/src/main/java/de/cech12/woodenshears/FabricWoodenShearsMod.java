@@ -24,10 +24,6 @@ public class FabricWoodenShearsMod implements ModInitializer {
 
     public static final Item WOODEN_SHEARS = registerItem("wooden_shears", WoodenShearsItem::new);
 
-    static {
-        Constants.WOODEN_SHEARS = () -> WOODEN_SHEARS;
-    }
-
     private static Item registerItem(String name, Function<Item.Properties, Item> itemConstructor) {
         ResourceKey<Item> resourceKey = ResourceKey.create(BuiltInRegistries.ITEM.key(), Constants.id(name));
         return Registry.register(BuiltInRegistries.ITEM, resourceKey, itemConstructor.apply(new Item.Properties().setId(resourceKey)));

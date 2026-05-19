@@ -1,7 +1,7 @@
 package de.cech12.woodenshears.mixin;
 
 import com.google.common.collect.ImmutableList;
-import de.cech12.woodenshears.Constants;
+import de.cech12.woodenshears.FabricWoodenShearsMod;
 import de.cech12.woodenshears.mixin.accessor.HolderSetDirectAccessor;
 import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents;
 import net.minecraft.advancements.criterion.ItemPredicate;
@@ -35,7 +35,7 @@ public abstract class MatchToolMixin implements LootItemCondition {
 
     static {
         CommonLifecycleEvents.TAGS_LOADED.register((registries, client) -> {
-            Holder<Item> woodenShearsHolder = BuiltInRegistries.ITEM.wrapAsHolder(Constants.WOODEN_SHEARS.get());
+            Holder<Item> woodenShearsHolder = BuiltInRegistries.ITEM.wrapAsHolder(FabricWoodenShearsMod.WOODEN_SHEARS);
             Holder<Item> shearsHolder = BuiltInRegistries.ITEM.wrapAsHolder(Items.SHEARS);
             //add wooden shears to all MatchTool predicates that contains vanilla shears
             for (ItemPredicate itemPredicate : ITEM_PREDICATES) {

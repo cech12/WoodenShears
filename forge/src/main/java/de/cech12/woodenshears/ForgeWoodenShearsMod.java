@@ -1,6 +1,6 @@
 package de.cech12.woodenshears;
 
-import de.cech12.woodenshears.item.ForgeWoodenShearsItem;
+import de.cech12.woodenshears.item.WoodenShearsItem;
 import net.minecraft.core.dispenser.ShearsDispenseItemBehavior;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
@@ -29,7 +29,7 @@ public class ForgeWoodenShearsMod {
     /** mod specific item registry */
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Constants.MOD_ID);
 
-    public static final RegistryObject<Item> WOODEN_SHEARS = registerItem("wooden_shears", ForgeWoodenShearsItem::new);
+    public static final RegistryObject<Item> WOODEN_SHEARS = registerItem("wooden_shears", WoodenShearsItem::new);
 
     private static RegistryObject<Item> registerItem(String name, Function<Item.Properties, Item> itemConstructor) {
         return ITEMS.register(name, () -> itemConstructor.apply(new Item.Properties().setId(ResourceKey.create(BuiltInRegistries.ITEM.key(), Constants.id(name)))));

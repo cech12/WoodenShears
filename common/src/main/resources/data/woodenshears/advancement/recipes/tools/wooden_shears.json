@@ -19,7 +19,7 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "woodenshears:wooden_shears"
+        "recipes": "woodenshears:wooden_shears"
       }
     }
   },

@@ -1,6 +1,6 @@
 package de.cech12.woodenshears;
 
-import de.cech12.woodenshears.item.NeoforgeWoodenShearsItem;
+import de.cech12.woodenshears.item.WoodenShearsItem;
 import net.minecraft.core.dispenser.ShearsDispenseItemBehavior;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -25,7 +25,7 @@ public class NeoforgeWoodenShearsMod {
     /** mod specific item registry */
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Constants.MOD_ID);
 
-    public static final DeferredItem<Item> WOODEN_SHEARS = ITEMS.registerItem("wooden_shears", NeoforgeWoodenShearsItem::new);
+    public static final DeferredItem<Item> WOODEN_SHEARS = ITEMS.registerItem("wooden_shears", WoodenShearsItem::new);
 
     /**
      * Constructor of a mod instance.

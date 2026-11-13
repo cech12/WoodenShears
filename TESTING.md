@@ -8,6 +8,10 @@ Wooden Shears has two automated test levels. Both run in CI on every push and pu
 | **GameTests** | Every feature of the mod (see table below) in a real game test server | Gradle (`runGameTestServer`), development environment |
 | **Server start test** | The built release jar starts cleanly on a real dedicated server, with and without the optional integrations | Docker image [itzg/minecraft-server](https://github.com/itzg/docker-minecraft-server) |
 
+In CI (`.github/workflows/cicd-workflow.yml`) the game tests run in parallel to the build, the server start test
+runs after the build (it needs the release jars), and publishing on a tag only starts when build, game tests and
+server start test succeeded.
+
 ## Running the tests locally
 
 GameTests (Java 25 toolchain is provisioned by Gradle):

@@ -20,14 +20,14 @@ jobs:
       java-version: 25
   gametest:
     name: Game Test
-    uses: cech12/MinecraftModActions/.github/workflows/gametest.yml@feature/server-starttest
+    uses: cech12/MinecraftModActions/.github/workflows/gametest.yml@main
     with:
       java-version: 25
       loaders: '["fabric", "forge", "neoforge"]'
   server-starttest:
     needs: build
     name: Server Start Test
-    uses: cech12/MinecraftModActions/.github/workflows/server-starttest.yml@feature/server-starttest
+    uses: cech12/MinecraftModActions/.github/workflows/server-starttest.yml@main
     with:
       loaders: '["fabric", "forge", "neoforge"]'
   publish-github:

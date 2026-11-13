@@ -34,7 +34,7 @@ public final class EntityTests {
 
     public static void register(WoodenShearsGameTests.TestCollector tests) {
         tests.add("entity/shears_sheep", EntityTests::shearsSheep);
-        tests.add("entity/shears_sheep_in_creative_without_damage", EntityTests::shearsSheepInCreativeWithoutDamage);
+        tests.add("entity/shears_in_creative_without_damage", EntityTests::shearsInCreativeWithoutDamage);
         tests.add("entity/shears_mooshroom", EntityTests::shearsMooshroom);
         tests.add("entity/shears_snow_golem", EntityTests::shearsSnowGolem);
         tests.add("entity/shears_bogged", EntityTests::shearsBogged);
@@ -65,14 +65,21 @@ public final class EntityTests {
         helper.succeed();
     }
 
-    /** Shearing in creative mode does not damage the shears. */
-    public static void shearsSheepInCreativeWithoutDamage(GameTestHelper helper) {
+    /** Shearing a sheep, a mooshroom and a snow golem in creative mode works and does not damage the shears. */
+    public static void shearsInCreativeWithoutDamage(GameTestHelper helper) {
         Sheep sheep = helper.spawn(EntityTypes.SHEEP, TestUtils.CENTER);
+        MushroomCow mooshroom = helper.spawn(EntityTypes.MOOSHROOM, TestUtils.CENTER.west());
+        SnowGolem golem = helper.spawn(EntityTypes.SNOW_GOLEM, TestUtils.CENTER.east());
         ServerPlayer player = TestUtils.player(helper, GameType.CREATIVE, TestUtils.woodenShears());
         assertConsumed(helper, TestUtils.interact(player, sheep), "sheep");
+        assertConsumed(helper, TestUtils.interact(player, mooshroom), "mooshroom");
+        assertConsumed(helper, TestUtils.interact(player, golem), "snow golem");
         helper.assertTrue(sheep.isSheared(), "sheep was not sheared");
-        TestUtils.assertDamage(helper, player.getMainHandItem(), 0, "after shearing in creative mode");
-        helper.succeed();
+        helper.assertTrue(!golem.hasPumpkin(), "snow golem still has its pumpkin");
+        helper.succeedWhen(() -> {
+            helper.assertEntityPresent(EntityTypes.COW);
+            TestUtils.assertDamage(helper, player.getMainHandItem(), 0, "after shearing in creative mode");
+        });
     }
 
     /** Shearing a mooshroom turns it into a cow and drops mushrooms. */

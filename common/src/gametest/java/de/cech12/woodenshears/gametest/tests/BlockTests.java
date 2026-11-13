@@ -85,15 +85,21 @@ public final class BlockTests {
         helper.succeed();
     }
 
-    /** Beehives that are not full are not harvested and the shears are not damaged. */
+    /** Beehives and bee nests that are not full (honey level 0 - 4) are not harvested and the shears are not damaged. */
     public static void doesNotHarvestBeehivesWithoutHoney(GameTestHelper helper) {
-        int level = BeehiveBlock.MAX_HONEY_LEVELS - 1;
-        helper.setBlock(TestUtils.CENTER, Blocks.BEEHIVE.defaultBlockState().setValue(BeehiveBlock.HONEY_LEVEL, level));
+        BlockPos hive = TestUtils.CENTER.west();
+        BlockPos nest = TestUtils.CENTER.east();
         ServerPlayer player = survivalPlayer(helper);
-        helper.useBlock(TestUtils.CENTER, player);
-        helper.assertBlockProperty(TestUtils.CENTER, BeehiveBlock.HONEY_LEVEL, level);
+        for (int level = 0; level < BeehiveBlock.MAX_HONEY_LEVELS; level++) {
+            helper.setBlock(hive, Blocks.BEEHIVE.defaultBlockState().setValue(BeehiveBlock.HONEY_LEVEL, level));
+            helper.setBlock(nest, Blocks.BEE_NEST.defaultBlockState().setValue(BeehiveBlock.HONEY_LEVEL, level));
+            helper.useBlock(hive, player);
+            helper.useBlock(nest, player);
+            helper.assertBlockProperty(hive, BeehiveBlock.HONEY_LEVEL, level);
+            helper.assertBlockProperty(nest, BeehiveBlock.HONEY_LEVEL, level);
+        }
         helper.assertItemEntityNotPresent(Items.HONEYCOMB);
-        TestUtils.assertDamage(helper, player.getMainHandItem(), 0, "after using it on a beehive without enough honey");
+        TestUtils.assertDamage(helper, player.getMainHandItem(), 0, "after using it on beehives without enough honey");
         helper.succeed();
     }
 

@@ -50,10 +50,6 @@ minecraft {
     }
 }
 
-test {
-    failOnNoDiscoveredTests = false
-}
-
 // ForgeGradle only creates run tasks for source sets that depend on Minecraft.
 configurations {
     gametestImplementation.extendsFrom(implementation)

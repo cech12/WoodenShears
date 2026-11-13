@@ -127,7 +127,7 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 | Feature | Test(s) |
 |---|---|
 | Sheep: drops wool, sheared, shears lose one durability | `entity/shears_sheep` |
-| Creative mode does not damage the shears | `entity/shears_sheep_in_creative_without_damage` |
+| Creative mode (sheep, mooshroom, snow golem) works and does not damage the shears | `entity/shears_in_creative_without_damage` |
 | Mooshroom turns into a cow and drops mushrooms | `entity/shears_mooshroom` |
 | Snow golem loses its pumpkin | `entity/shears_snow_golem` |
 | Bogged can be sheared (fixed known issue 1.21-3.1.0.0) | `entity/shears_bogged` |
@@ -144,7 +144,7 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 |---|---|
 | Pumpkins can be carved (fixed 1.17.1-1.1.0.1) | `block/carves_pumpkin` |
 | Full beehives and bee nests can be harvested (fixed 1.17.1-1.1.0.1) | `block/harvests_full_beehives` |
-| Beehives that are not full are not harvested and the shears are not damaged | `block/does_not_harvest_beehives_without_honey` |
+| Beehives and bee nests that are not full (honey level 0 - 4) are not harvested and the shears are not damaged | `block/does_not_harvest_beehives_without_honey` |
 | Cutting a tripwire disarms it (fixed 1.17.1-1.1.0.1) | `block/disarms_tripwire`, control test `block/tripwire_triggers_without_shears` |
 | Using shears on a plant tip (e.g. twisting vines) stops its growth | `block/stops_growth_of_plant_tips` |
 | For every block state of every registered block, the drops with wooden shears are the same as with vanilla shears (leaves, grass, vines, cobweb, tall grass, ...). This keeps all shears specific loot tables identical on all loaders. The test fails if well-known shears blocks are not detected as shears specific, and it logs the list of detected blocks (about 33 in 26.3) | `block/drops_like_vanilla_shears` |
@@ -154,7 +154,7 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 
 | Feature | Test(s) |
 |---|---|
-| Dispensers shear sheep | `dispenser/shears_sheep` |
+| Dispensers shear sheep, mooshrooms and snow golems | `dispenser/shears_sheep`, `dispenser/shears_mooshroom`, `dispenser/shears_snow_golem` |
 | Dispensers harvest full beehives | `dispenser/harvests_full_beehive` |
 | Dispensers cut leashes | `dispenser/cuts_leash` |
 

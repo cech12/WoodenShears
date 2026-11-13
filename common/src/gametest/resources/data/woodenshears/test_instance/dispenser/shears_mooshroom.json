@@ -1,6 +1,6 @@
 {
   "type": "minecraft:function",
-  "function": "woodenshears:entity/shears_sheep_in_creative_without_damage",
+  "function": "woodenshears:dispenser/shears_mooshroom",
   "environment": "woodenshears:default",
   "structure": "woodenshears:platform",
   "max_ticks": 100

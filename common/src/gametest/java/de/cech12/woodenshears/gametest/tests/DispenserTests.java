@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.golem.SnowGolem;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
@@ -28,6 +29,8 @@ public final class DispenserTests {
 
     public static void register(WoodenShearsGameTests.TestCollector tests) {
         tests.add("dispenser/shears_sheep", DispenserTests::shearsSheep);
+        tests.add("dispenser/shears_mooshroom", DispenserTests::shearsMooshroom);
+        tests.add("dispenser/shears_snow_golem", DispenserTests::shearsSnowGolem);
         tests.add("dispenser/harvests_full_beehive", DispenserTests::harvestsFullBeehive);
         tests.add("dispenser/cuts_leash", DispenserTests::cutsLeash);
     }
@@ -48,6 +51,27 @@ public final class DispenserTests {
             helper.assertTrue(sheep.isSheared(), "sheep was not sheared by the dispenser");
             TestUtils.assertItemEntityPresent(helper, ItemTags.WOOL);
             TestUtils.assertDamage(helper, dispenser.getItem(0), 1, "in dispenser after shearing a sheep");
+        });
+    }
+
+    public static void shearsMooshroom(GameTestHelper helper) {
+        helper.spawn(EntityTypes.MOOSHROOM, TARGET);
+        DispenserBlockEntity dispenser = dispense(helper);
+        helper.succeedWhen(() -> {
+            helper.assertEntityPresent(EntityTypes.COW);
+            helper.assertEntityNotPresent(EntityTypes.MOOSHROOM);
+            helper.assertItemEntityPresent(Items.RED_MUSHROOM);
+            TestUtils.assertDamage(helper, dispenser.getItem(0), 1, "in dispenser after shearing a mooshroom");
+        });
+    }
+
+    public static void shearsSnowGolem(GameTestHelper helper) {
+        SnowGolem golem = helper.spawn(EntityTypes.SNOW_GOLEM, TARGET);
+        DispenserBlockEntity dispenser = dispense(helper);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(!golem.hasPumpkin(), "snow golem was not sheared by the dispenser");
+            helper.assertItemEntityPresent(Items.CARVED_PUMPKIN);
+            TestUtils.assertDamage(helper, dispenser.getItem(0), 1, "in dispenser after shearing a snow golem");
         });
     }
 

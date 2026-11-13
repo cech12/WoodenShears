@@ -58,7 +58,7 @@ game tests and server start test for every loader on every pull request.
   leash knot, tripwire) and `MatchToolMixin` for loot conditions. When a new Minecraft version adds shears
   interactions, check `block/drops_like_vanilla_shears` and the entity tests on Fabric first. Forge and NeoForge
   handle shears via their own tool actions/tags; some interactions there depended on loader PRs (copper golem, leash).
-- Data pack `match_tool` conditions with `minecraft:shears` only accept wooden shears on Fabric (known issue, see
-  TESTING.md).
+- Data pack `match_tool` conditions that name `minecraft:shears` directly only accept wooden shears on Fabric. This is
+  intended (Forge/NeoForge use their tool actions via `minecraft:tool/can_shear`), see "Data packs" in TESTING.md.
 - Cloth Config and ModMenu are often not yet available for a new Minecraft version. When they are temporarily
   removed, adjust `scripts/server-starttest.deps` as well.

@@ -4,6 +4,7 @@ import de.cech12.woodenshears.Constants;
 import de.cech12.woodenshears.gametest.KnownIssues;
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
+import de.cech12.woodenshears.platform.Services;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
@@ -17,19 +18,23 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
-import java.util.Set;
 
 /**
- * Loot tables of data packs that check for shears with a "match_tool" condition. The test loot tables are part of the
- * gametest resources (data/woodenshears/loot_table/gametest/*.json) and drop a diamond if the condition matches.
+ * Loot tables of data packs that check for shears. The test loot tables are part of the gametest resources
+ * (data/woodenshears/loot_table/gametest/*.json) and drop a diamond if their shears condition matches.
+ * <p>
+ * Recommended for data packs (works on all loaders): reference the vanilla predicate "minecraft:tool/can_shear" (like
+ * vanilla loot tables do) or use the tag "c:tools/shear". Forge and NeoForge replace "minecraft:tool/can_shear" with
+ * their shears tool action, Fabric keeps the vanilla predicate and adds wooden shears to it (MatchToolMixin).
  */
 public final class LootTests {
 
     private LootTests() {}
 
     public static void register(WoodenShearsGameTests.TestCollector tests) {
-        tests.add("loot/match_tool_with_vanilla_shears_accepts_wooden_shears", LootTests::matchToolWithVanillaShears);
+        tests.add("loot/can_shear_predicate_accepts_wooden_shears", LootTests::canShearPredicate);
         tests.add("loot/match_tool_with_shears_tag_accepts_wooden_shears", LootTests::matchToolWithShearsTag);
+        tests.add("loot/fabric_match_tool_with_vanilla_shears_accepts_wooden_shears", LootTests::fabricMatchToolWithVanillaShears);
     }
 
     private static List<ItemStack> roll(GameTestHelper helper, String table, ItemStack tool) {
@@ -53,15 +58,10 @@ public final class LootTests {
                 "wooden shears do not match the shears condition of loot table " + table);
     }
 
-    /**
-     * "match_tool" conditions of data packs that require vanilla shears ("items": "minecraft:shears") also accept wooden
-     * shears. Implemented on Fabric (MatchToolMixin). Forge and NeoForge have no equivalent, there only the vanilla
-     * predicate "minecraft:tool/can_shear" and the shears tag work (see block/drops_like_vanilla_shears).
-     */
-    public static void matchToolWithVanillaShears(GameTestHelper helper) {
-        KnownIssues.run(helper, "data pack match_tool with minecraft:shears ignores wooden shears (no MatchToolMixin)",
-                Set.of(KnownIssues.FORGE, KnownIssues.NEOFORGE),
-                () -> assertMatches(helper, "match_tool_vanilla_shears"));
+    /** Data packs that reference the vanilla predicate "minecraft:tool/can_shear" accept wooden shears (all loaders). */
+    public static void canShearPredicate(GameTestHelper helper) {
+        assertMatches(helper, "predicate_can_shear");
+        helper.succeed();
     }
 
     /**
@@ -70,6 +70,19 @@ public final class LootTests {
      */
     public static void matchToolWithShearsTag(GameTestHelper helper) {
         assertMatches(helper, "match_tool_shears_tag");
+        helper.succeed();
+    }
+
+    /**
+     * Fabric only: "match_tool" conditions that name vanilla shears directly ("items": "minecraft:shears") also accept
+     * wooden shears, because Fabric has no shears tool action and the MatchToolMixin extends these conditions.
+     * Forge and NeoForge intentionally keep such explicit item checks as they are (data packs should use the predicate or
+     * the tag, see above), so this test does nothing there.
+     */
+    public static void fabricMatchToolWithVanillaShears(GameTestHelper helper) {
+        if (KnownIssues.FABRIC.equals(Services.PLATFORM.getPlatformName())) {
+            assertMatches(helper, "match_tool_vanilla_shears");
+        }
         helper.succeed();
     }
 

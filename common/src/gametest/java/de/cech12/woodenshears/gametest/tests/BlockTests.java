@@ -1,11 +1,13 @@
 package de.cech12.woodenshears.gametest.tests;
 
+import de.cech12.woodenshears.Constants;
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -19,6 +21,8 @@ import net.minecraft.world.level.block.MultifaceBlock;
 import net.minecraft.world.level.block.TripWireBlock;
 import net.minecraft.world.level.block.TripWireHookBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
@@ -26,8 +30,10 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Using and breaking blocks with wooden shears does everything vanilla shears do.
@@ -145,8 +151,23 @@ public final class BlockTests {
     }
 
     /**
-     * For every block, the loot table produces the same drops with wooden shears as with vanilla shears
-     * (leaves, grass, vines, cobwebs, ... drop themselves, tall grass drops grass, ...).
+     * Blocks whose drops are known to depend on shears. They must be detected as shears specific, otherwise the
+     * comparison in {@link #dropsLikeVanillaShears} would silently check nothing.
+     */
+    /** Position where both halves of double plants are placed for the loot comparison. */
+    private static final BlockPos DOUBLE_PLANT_POS = TestUtils.CENTER;
+
+    private static final List<Block> KNOWN_SHEARS_BLOCKS = List.of(
+            Blocks.OAK_LEAVES, Blocks.COBWEB, Blocks.SHORT_GRASS, Blocks.TALL_GRASS, Blocks.FERN, Blocks.LARGE_FERN,
+            Blocks.DEAD_BUSH, Blocks.VINE, Blocks.GLOW_LICHEN, Blocks.SEAGRASS, Blocks.TALL_SEAGRASS, Blocks.HANGING_ROOTS,
+            Blocks.NETHER_SPROUTS, Blocks.TWISTING_VINES, Blocks.WEEPING_VINES
+    );
+
+    /**
+     * For every block state of every registered block (also blocks of other loaded mods), the loot table produces the
+     * same drops with wooden shears as with vanilla shears (leaves, grass, vines, cobwebs, ... drop themselves, tall
+     * grass drops grass, ...). This is what keeps shears specific drops identical on all loaders: Fabric extends the
+     * vanilla shears conditions (MatchToolMixin), Forge/NeoForge use their shears tool action.
      */
     public static void dropsLikeVanillaShears(GameTestHelper helper) {
         var level = helper.getLevel();
@@ -155,31 +176,61 @@ public final class BlockTests {
         ItemStack vanilla = new ItemStack(Items.SHEARS);
         Vec3 origin = helper.absoluteVec(Vec3.atCenterOf(TestUtils.CENTER));
         List<String> differences = new ArrayList<>();
-        int tablesWithShearsDrops = 0;
+        List<String> errors = new ArrayList<>();
+        Set<Block> shearsSpecificBlocks = new HashSet<>();
         for (Block block : BuiltInRegistries.BLOCK) {
-            BlockState state = block.defaultBlockState();
-            if (block instanceof MultifaceBlock) {
-                state = state.setValue(MultifaceBlock.getFaceProperty(Direction.DOWN), true);
-            }
-            var key = state.getBlock().getLootTable();
+            var key = block.getLootTable();
             if (key.isEmpty()) {
                 continue;
             }
             LootTable table = lootTables.getLootTable(key.get());
-            long seed = BuiltInRegistries.BLOCK.getKey(block).hashCode();
-            List<ItemStack> woodenDrops = table.getRandomItems(params(level, origin, state, wooden), seed);
-            List<ItemStack> vanillaDrops = table.getRandomItems(params(level, origin, state, vanilla), seed);
-            List<ItemStack> handDrops = table.getRandomItems(params(level, origin, state, ItemStack.EMPTY), seed);
-            if (!sameStacks(woodenDrops, vanillaDrops)) {
-                differences.add(BuiltInRegistries.BLOCK.getKey(block) + " (wooden: " + woodenDrops + ", vanilla: " + vanillaDrops + ")");
-            }
-            if (!sameStacks(vanillaDrops, handDrops)) {
-                tablesWithShearsDrops++;
+            Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
+            for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+                long seed = (long) blockId.hashCode() * 31 + state.hashCode();
+                Vec3 lootOrigin = origin;
+                boolean doublePlant = state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF);
+                if (doublePlant) {
+                    // loot tables of double plants (tall grass, large fern, ...) check that the other half exists
+                    BlockState lower = state.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.LOWER);
+                    placeWithoutUpdates(helper, DOUBLE_PLANT_POS, lower);
+                    placeWithoutUpdates(helper, DOUBLE_PLANT_POS.above(), lower.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER));
+                    BlockPos lootPos = state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER ? DOUBLE_PLANT_POS : DOUBLE_PLANT_POS.above();
+                    lootOrigin = helper.absoluteVec(Vec3.atCenterOf(lootPos));
+                }
+                try {
+                    List<ItemStack> woodenDrops = table.getRandomItems(params(level, lootOrigin, state, wooden), seed);
+                    List<ItemStack> vanillaDrops = table.getRandomItems(params(level, lootOrigin, state, vanilla), seed);
+                    List<ItemStack> handDrops = table.getRandomItems(params(level, lootOrigin, state, ItemStack.EMPTY), seed);
+                    if (!sameStacks(woodenDrops, vanillaDrops)) {
+                        differences.add(state + " (wooden: " + woodenDrops + ", vanilla: " + vanillaDrops + ")");
+                    }
+                    if (!sameStacks(vanillaDrops, handDrops)) {
+                        shearsSpecificBlocks.add(block);
+                    }
+                } catch (RuntimeException e) {
+                    errors.add(state + ": " + e);
+                } finally {
+                    if (doublePlant) {
+                        placeWithoutUpdates(helper, DOUBLE_PLANT_POS.above(), Blocks.AIR.defaultBlockState());
+                        placeWithoutUpdates(helper, DOUBLE_PLANT_POS, Blocks.AIR.defaultBlockState());
+                    }
+                }
             }
         }
-        helper.assertTrue(tablesWithShearsDrops > 10, "test is broken: only " + tablesWithShearsDrops + " loot tables depend on shears");
-        helper.assertTrue(differences.isEmpty(), "drops differ from vanilla shears: " + differences);
+        List<String> undetected = KNOWN_SHEARS_BLOCKS.stream().filter(block -> !shearsSpecificBlocks.contains(block))
+                .map(block -> BuiltInRegistries.BLOCK.getKey(block).toString()).toList();
+        helper.assertTrue(undetected.isEmpty(), "test is broken: drops of " + undetected + " do not depend on shears");
+        helper.assertTrue(errors.isEmpty(), "loot tables could not be evaluated: " + errors.stream().limit(10).toList());
+        helper.assertTrue(differences.isEmpty(), differences.size() + " block states drop differently than with vanilla shears: "
+                + differences.stream().limit(10).toList());
+        Constants.LOG.info("Compared drops of {} shears specific blocks with vanilla shears: {}", shearsSpecificBlocks.size(),
+                shearsSpecificBlocks.stream().map(block -> BuiltInRegistries.BLOCK.getKey(block).toString()).sorted().toList());
         helper.succeed();
+    }
+
+    /** Sets a block without neighbor updates, so plants do not break on the stone floor. */
+    private static void placeWithoutUpdates(GameTestHelper helper, BlockPos pos, BlockState state) {
+        helper.getLevel().setBlock(helper.absolutePos(pos), state, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS);
     }
 
     private static LootParams params(net.minecraft.server.level.ServerLevel level, Vec3 origin, BlockState state, ItemStack tool) {

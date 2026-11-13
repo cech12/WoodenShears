@@ -145,7 +145,7 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 | Beehives that are not full are not harvested and the shears are not damaged | `block/does_not_harvest_beehives_without_honey` |
 | Cutting a tripwire disarms it (fixed 1.17.1-1.1.0.1) | `block/disarms_tripwire`, control test `block/tripwire_triggers_without_shears` |
 | Using shears on a plant tip (e.g. twisting vines) stops its growth | `block/stops_growth_of_plant_tips` |
-| All block drops are the same as with vanilla shears (leaves, grass, vines, cobweb, tall grass, ...) | `block/drops_like_vanilla_shears` |
+| For every block state of every registered block, the drops with wooden shears are the same as with vanilla shears (leaves, grass, vines, cobweb, tall grass, ...). This keeps all shears specific loot tables identical on all loaders. The test fails if well-known shears blocks are not detected as shears specific, and it logs the list of detected blocks (about 33 in 26.3) | `block/drops_like_vanilla_shears` |
 | Breaking leaves, cobweb, grass, fern, dead bush and glow lichen (#11) drops them and damages the shears | `block/breaking_drops_shearable_blocks` |
 
 ### Dispenser
@@ -158,10 +158,21 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 
 ### Data packs
 
+Recommended for data packs: check for shears with the vanilla predicate `minecraft:tool/can_shear` (like vanilla
+loot tables do) or with the tag `c:tools/shear`. Both accept wooden shears on all loaders.
+
 | Feature | Test(s) |
 |---|---|
-| `match_tool` conditions with a shears tag accept wooden shears; such data packs do not crash the world loading ([CeramicShears#28](https://github.com/cech12/CeramicShears/issues/28)) | `loot/match_tool_with_shears_tag_accepts_wooden_shears` |
-| `match_tool` conditions with `minecraft:shears` accept wooden shears (Fabric only, see known issues) | `loot/match_tool_with_vanilla_shears_accepts_wooden_shears` |
+| Loot conditions that reference `minecraft:tool/can_shear` accept wooden shears | `loot/can_shear_predicate_accepts_wooden_shears` |
+| `match_tool` conditions with the tag `c:tools/shear` accept wooden shears; such data packs do not crash the world loading ([CeramicShears#28](https://github.com/cech12/CeramicShears/issues/28)) | `loot/match_tool_with_shears_tag_accepts_wooden_shears` |
+| Fabric only: `match_tool` conditions that name `minecraft:shears` directly accept wooden shears | `loot/fabric_match_tool_with_vanilla_shears_accepts_wooden_shears` (only asserts on Fabric) |
+
+**Intended loader difference:** Forge and NeoForge replace the vanilla predicate `minecraft:tool/can_shear` with
+their shears tool action (`forge:can_tool_perform_action` / `neoforge:can_item_perform_ability`, `shears_dig`),
+which wooden shears support as a shears item. Fabric has no such tool action and keeps the vanilla predicate, so the
+mod adds wooden shears to every `match_tool` condition that contains vanilla shears (`MatchToolMixin`). That is why a
+data pack that names `minecraft:shears` directly also accepts wooden shears on Fabric, but not on Forge and NeoForge.
+This is not a bug: such data packs should use the predicate or the tag, which work everywhere.
 
 ### Resources and test setup
 
@@ -174,9 +185,7 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 
 ### Known issues (marked with `KnownIssues`)
 
-| Test | Loaders | Issue |
-|---|---|---|
-| `loot/match_tool_with_vanilla_shears_accepts_wooden_shears` | Forge, NeoForge | Data pack `match_tool` conditions that name `minecraft:shears` directly ignore wooden shears. Fabric patches these conditions (`MatchToolMixin`), Forge/NeoForge have no equivalent. Vanilla loot tables are not affected (they use `minecraft:tool/can_shear`, which works). |
+Currently none.
 
 ## Not tested automatically
 

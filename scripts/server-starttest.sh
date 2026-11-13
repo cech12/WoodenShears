@@ -4,7 +4,12 @@
 # can be run locally in the same way:
 #
 #   ./gradlew build
-#   scripts/server-starttest.sh <fabric|forge|neoforge> [--with-integrations]
+#   scripts/server-starttest.sh <fabric|forge|neoforge> [--with-integrations] [--print-cache-key]
+#
+# --with-integrations  also install the optional mods of scripts/server-starttest.deps. If the loader has no optional
+#                      mods, there is nothing to test beyond the run without this option and the script exits with 0.
+# --print-cache-key    only print the cache key of the server installation in $STARTTEST_DIR/<loader>-<mode>/data
+#                      (empty if the run is skipped, see above) and exit. Used by the CI.
 #
 # Requirements: bash, docker, curl, jq
 # All versions come from gradle.properties, additional mods from scripts/server-starttest.deps.
@@ -15,17 +20,23 @@
 #   STARTTEST_IMAGE     docker image (default itzg/minecraft-server:java<java_version>)
 set -euo pipefail
 
+usage() { echo "Usage: $0 <fabric|forge|neoforge> [--with-integrations] [--print-cache-key]" >&2; exit 2; }
 LOADER="${1:-}"
+[ $# -gt 0 ] && shift
 MODE="required"
-if [ "${2:-}" = "--with-integrations" ]; then
-    MODE="integrations"
-elif [ -n "${2:-}" ]; then
-    echo "Unknown option: $2" >&2
-    exit 2
-fi
+PRINT_CACHE_KEY=0
+for arg in "$@"; do
+    case "$arg" in
+        --with-integrations) MODE="integrations" ;;
+        --print-cache-key) PRINT_CACHE_KEY=1 ;;
+        *) echo "Unknown option: $arg" >&2; usage ;;
+    esac
+done
 case "$LOADER" in
-    fabric|forge|neoforge) ;;
-    *) echo "Usage: $0 <fabric|forge|neoforge> [--with-integrations]" >&2; exit 2 ;;
+    fabric)   LOADER_TYPE=FABRIC;   LOADER_VERSION_KEY=fabric_loader_version; LOADER_VERSION_ENV=FABRIC_LOADER_VERSION ;;
+    forge)    LOADER_TYPE=FORGE;    LOADER_VERSION_KEY=forge_version;         LOADER_VERSION_ENV=FORGE_VERSION ;;
+    neoforge) LOADER_TYPE=NEOFORGE; LOADER_VERSION_KEY=neoforge_version;      LOADER_VERSION_ENV=NEOFORGE_VERSION ;;
+    *) usage ;;
 esac
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -49,12 +60,25 @@ IMAGE="${STARTTEST_IMAGE:-itzg/minecraft-server:java${JAVA_VERSION}}"
 TIMEOUT="${STARTTEST_TIMEOUT:-600}"
 WORK="${STARTTEST_DIR:-$ROOT/.server-starttest}/${LOADER}-${MODE}"
 NAME="${MOD_ID}-starttest-${LOADER}-${MODE}"
+LOADER_VERSION="$(prop "$LOADER_VERSION_KEY")"
+LOADER_ENV=(-e "TYPE=$LOADER_TYPE" -e "$LOADER_VERSION_ENV=$LOADER_VERSION")
 
-case "$LOADER" in
-    fabric)   LOADER_ENV=(-e TYPE=FABRIC -e "FABRIC_LOADER_VERSION=$(prop fabric_loader_version)") ;;
-    forge)    LOADER_ENV=(-e TYPE=FORGE -e "FORGE_VERSION=$(prop forge_version)") ;;
-    neoforge) LOADER_ENV=(-e TYPE=NEOFORGE -e "NEOFORGE_VERSION=$(prop neoforge_version)") ;;
-esac
+# The integrations run only makes sense if the loader has optional mods, otherwise it equals the required run.
+SKIP=0
+if [ "$MODE" = "integrations" ] && ! grep -qE "^[[:space:]]*${LOADER}[[:space:]]+optional[[:space:]]" scripts/server-starttest.deps 2>/dev/null; then
+    SKIP=1
+fi
+
+if [ "$PRINT_CACHE_KEY" -eq 1 ]; then
+    [ "$SKIP" -eq 0 ] && echo "server-starttest-${LOADER}-${MODE}-${MC_VERSION}-${LOADER_VERSION}-java${JAVA_VERSION}"
+    exit 0
+fi
+if [ "$SKIP" -eq 1 ]; then
+    mkdir -p "$WORK"
+    printf '### Server start test: %s (%s)\n\nSkipped: no optional mods for %s in scripts/server-starttest.deps, this run would equal the run without integrations.\n' \
+        "$LOADER" "$MODE" "$LOADER" | tee "$WORK/summary.md"
+    exit 0
+fi
 
 JAR="$LOADER/build/libs/${MOD_ID}-${LOADER}-${MC_VERSION}-${MOD_VERSION}.jar"
 if [ ! -f "$JAR" ]; then
@@ -87,10 +111,15 @@ if [ -f scripts/server-starttest.deps ]; then
         [ "$dep_loader" != "$LOADER" ] && continue
         [ "$dep_kind" = "optional" ] && [ "$MODE" != "integrations" ] && continue
         dep_version="$(prop "$dep_key")"
-        versions="$(curl -fsS -A "server-starttest (github.com/cech12/MinecraftModActions)" -G \
+        # a failed request is an error, only an empty result means "not available"
+        if ! versions="$(curl -fsS --max-time 30 --retry 3 --retry-all-errors \
+            -A "server-starttest (github.com/cech12/MinecraftModActions)" -G \
             "https://api.modrinth.com/v2/project/${dep_slug}/version" \
             --data-urlencode "loaders=[\"${LOADER}\"]" \
-            --data-urlencode "game_versions=[\"${MC_VERSION}\"]" || echo '[]')"
+            --data-urlencode "game_versions=[\"${MC_VERSION}\"]")"; then
+            log "- **Modrinth request for $dep_slug failed** (network or API error, see above)"
+            exit 1
+        fi
         # exact version number, or the version number with a loader suffix (e.g. 26.3.158+fabric)
         version_id="$(jq -r --arg v "$dep_version" \
             '[.[] | select(.version_number == $v or (.version_number | startswith($v + "+")) or (.version_number | startswith($v + "-")))][0].id // empty' <<< "$versions")"

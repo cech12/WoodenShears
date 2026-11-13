@@ -40,7 +40,9 @@ All versions come from `gradle.properties`. Additional mods are listed in `scrip
 (Modrinth slug + `gradle.properties` key of the version). The test fails if the server does not become healthy
 within 10 minutes, does not log "Done", writes a crash report, or logs exceptions, mixin errors or errors mentioning
 the mod id. Known harmless log lines can be excluded in `scripts/server-starttest.allowlist` (one regex per line).
-Logs and a summary are written to `.server-starttest/<loader>-<mode>/`.
+Logs and a summary are written to `.server-starttest/<loader>-<mode>/`. A Modrinth request that fails is an error,
+only a missing version of an optional mod is skipped. `--with-integrations` is skipped (exit 0) for loaders without
+optional mods (currently Forge and NeoForge), because it would equal the run without integrations.
 
 ## How the GameTests are organized
 

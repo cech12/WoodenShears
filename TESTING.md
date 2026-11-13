@@ -133,8 +133,8 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 | Bogged can be sheared (fixed known issue 1.21-3.1.0.0) | `entity/shears_bogged` |
 | Copper golem loses its flower (1.21.9-3.6.0.1) | `entity/shears_copper_golem` |
 | Sulfur cube ejects its swallowed item | `entity/shears_sulfur_cube` |
-| Equipment like a saddle can be cut off | `entity/removes_saddle` |
-| Wolf armor can be removed by the owner (fixed known issue 1.21-3.1.0.0) | `entity/removes_wolf_armor` |
+| Equipment like a saddle can be cut off, with the same durability loss as vanilla shears | `entity/removes_saddle` |
+| Wolf armor can be removed by the owner, with the same durability loss as vanilla shears (fixed known issue 1.21-3.1.0.0) | `entity/removes_wolf_armor` |
 | Leash of an entity can be cut (1.21.9-3.6.0.1) | `entity/cuts_leash_of_entity` |
 | Leash knot on a fence can be removed (1.21.9-3.6.0.1) | `entity/cuts_leash_knot` |
 
@@ -180,7 +180,7 @@ This is not a bug: such data packs should use the predicate or the tag, which wo
 
 | Feature | Test(s) |
 |---|---|
-| Item name translated in all shipped languages, English "Wooden Shears" | `resources/item_name_is_translated` |
+| Item name translated in all shipped languages (all files in `assets/woodenshears/lang/`, found automatically), English "Wooden Shears" | `resources/item_name_is_translated` |
 | Item model definition, model and texture exist and reference each other | `resources/item_model_and_texture_exist` |
 | Every test function has a test instance | `meta/every_test_function_has_an_instance` |
 | The release jar starts on a dedicated server, with and without integrations (Cloth Config and ModMenu on Fabric) | server start test |

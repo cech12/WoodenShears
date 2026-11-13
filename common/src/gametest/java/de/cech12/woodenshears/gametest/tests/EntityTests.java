@@ -7,6 +7,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -118,7 +119,7 @@ public final class EntityTests {
     /** 1.21.9-3.6.0.1: the flower of a copper golem can be sheared off. */
     public static void shearsCopperGolem(GameTestHelper helper) {
         CopperGolem golem = helper.spawn(EntityTypes.COPPER_GOLEM, TestUtils.CENTER);
-        Item flower = BuiltInRegistries.ITEM.getTagOrEmpty(ItemTags.SHEARABLE_FROM_COPPER_GOLEM).iterator().next().value();
+        Item flower = firstOfTag(helper, ItemTags.SHEARABLE_FROM_COPPER_GOLEM);
         golem.setItemSlot(CopperGolem.EQUIPMENT_SLOT_ANTENNA, new ItemStack(flower));
         ServerPlayer player = survivalPlayer(helper);
         assertConsumed(helper, TestUtils.interact(player, golem), "copper golem");
@@ -131,7 +132,7 @@ public final class EntityTests {
     /** Shearing a sulfur cube ejects the swallowed item. */
     public static void shearsSulfurCube(GameTestHelper helper) {
         SulfurCube cube = helper.spawn(EntityTypes.SULFUR_CUBE, TestUtils.CENTER);
-        Item swallowable = BuiltInRegistries.ITEM.getTagOrEmpty(ItemTags.SULFUR_CUBE_SWALLOWABLE).iterator().next().value();
+        Item swallowable = firstOfTag(helper, ItemTags.SULFUR_CUBE_SWALLOWABLE);
         cube.setItemSlot(EquipmentSlot.BODY, new ItemStack(swallowable));
         helper.assertTrue(cube.readyForShearing(), "sulfur cube test setup failed: cube is not ready for shearing");
         ServerPlayer player = survivalPlayer(helper);
@@ -142,27 +143,51 @@ public final class EntityTests {
         helper.succeed();
     }
 
-    /** Shears cut off equipment like a saddle. */
+    /** First item of a vanilla item tag that a test needs, with a clear message if the tag is empty. */
+    private static Item firstOfTag(GameTestHelper helper, TagKey<Item> tag) {
+        var items = BuiltInRegistries.ITEM.getTagOrEmpty(tag).iterator();
+        helper.assertTrue(items.hasNext(), "test setup broken: item tag " + tag.location() + " is empty");
+        return items.next().value();
+    }
+
+    /** Shears cut off equipment like a saddle, with the same durability loss as vanilla shears. */
     public static void removesSaddle(GameTestHelper helper) {
-        Pig pig = helper.spawn(EntityTypes.PIG, TestUtils.CENTER);
-        pig.setItemSlot(EquipmentSlot.SADDLE, new ItemStack(Items.SADDLE));
-        ServerPlayer player = survivalPlayer(helper);
-        assertConsumed(helper, TestUtils.interact(player, pig), "saddled pig");
-        helper.assertTrue(pig.getItemBySlot(EquipmentSlot.SADDLE).isEmpty(), "saddle was not removed");
-        helper.assertItemEntityPresent(Items.SADDLE);
+        ItemStack wooden = removeSaddle(helper, TestUtils.CENTER.west(), TestUtils.woodenShears());
+        ItemStack vanilla = removeSaddle(helper, TestUtils.CENTER.east(), new ItemStack(Items.SHEARS));
+        TestUtils.assertDamage(helper, wooden, vanilla.getDamageValue(), "after removing a saddle (like vanilla shears)");
         helper.succeed();
     }
 
-    /** Fixed known issue 1.21-3.1.0.0: wolf armor can be removed by the owner. */
+    private static ItemStack removeSaddle(GameTestHelper helper, BlockPos pos, ItemStack shears) {
+        Pig pig = helper.spawn(EntityTypes.PIG, pos);
+        pig.setItemSlot(EquipmentSlot.SADDLE, new ItemStack(Items.SADDLE));
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, shears);
+        assertConsumed(helper, TestUtils.interact(player, pig), "saddled pig with " + shears.getItem());
+        helper.assertTrue(pig.getItemBySlot(EquipmentSlot.SADDLE).isEmpty(), "saddle was not removed by " + shears.getItem());
+        helper.assertItemEntityPresent(Items.SADDLE, pos, 2);
+        return player.getMainHandItem();
+    }
+
+    /**
+     * Fixed known issue 1.21-3.1.0.0: wolf armor can be removed by the owner, with the same durability loss as vanilla
+     * shears.
+     */
     public static void removesWolfArmor(GameTestHelper helper) {
-        Wolf wolf = helper.spawn(EntityTypes.WOLF, TestUtils.CENTER);
-        ServerPlayer player = survivalPlayer(helper);
+        ItemStack wooden = removeWolfArmor(helper, TestUtils.CENTER.west(), TestUtils.woodenShears());
+        ItemStack vanilla = removeWolfArmor(helper, TestUtils.CENTER.east(), new ItemStack(Items.SHEARS));
+        TestUtils.assertDamage(helper, wooden, vanilla.getDamageValue(), "after removing wolf armor (like vanilla shears)");
+        helper.succeed();
+    }
+
+    private static ItemStack removeWolfArmor(GameTestHelper helper, BlockPos pos, ItemStack shears) {
+        Wolf wolf = helper.spawn(EntityTypes.WOLF, pos);
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, shears);
         wolf.tame(player);
         wolf.setItemSlot(EquipmentSlot.BODY, new ItemStack(Items.WOLF_ARMOR));
-        assertConsumed(helper, TestUtils.interact(player, wolf), "wolf with armor");
-        helper.assertTrue(wolf.getItemBySlot(EquipmentSlot.BODY).isEmpty(), "wolf armor was not removed");
-        helper.assertItemEntityPresent(Items.WOLF_ARMOR);
-        helper.succeed();
+        assertConsumed(helper, TestUtils.interact(player, wolf), "wolf with armor and " + shears.getItem());
+        helper.assertTrue(wolf.getItemBySlot(EquipmentSlot.BODY).isEmpty(), "wolf armor was not removed by " + shears.getItem());
+        helper.assertItemEntityPresent(Items.WOLF_ARMOR, pos, 2);
+        return player.getMainHandItem();
     }
 
     private static LeashFenceKnotEntity leashToFence(GameTestHelper helper, Pig pig, BlockPos fencePos) {

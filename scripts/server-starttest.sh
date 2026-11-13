@@ -120,9 +120,12 @@ if [ -f scripts/server-starttest.deps ]; then
             log "- **Modrinth request for $dep_slug failed** (network or API error, see above)"
             exit 1
         fi
-        # exact version number, or the version number with a loader suffix (e.g. 26.3.158+fabric)
+        # exact version number first, then with build metadata (e.g. 26.3.158+fabric), then with a "-" suffix
+        # (e.g. 20.0.149-fabric) only if it is a release, so that a pre-release like 1.2-beta is never picked for 1.2
         version_id="$(jq -r --arg v "$dep_version" \
-            '[.[] | select(.version_number == $v or (.version_number | startswith($v + "+")) or (.version_number | startswith($v + "-")))][0].id // empty' <<< "$versions")"
+            '(map(select(.version_number == $v))
+              + map(select(.version_number | startswith($v + "+")))
+              + map(select((.version_number | startswith($v + "-")) and .version_type == "release")))[0].id // empty' <<< "$versions")"
         if [ -n "$version_id" ]; then
             MODRINTH_IDS+=("${dep_slug}:${version_id}")
             log "- $dep_kind: $dep_slug $dep_version"

@@ -68,7 +68,7 @@ public final class DurabilityTests {
     }
 
     /**
-     * Environments "durability_0" and "durability_-1": durability 0 (or less) deactivates the durability.
+     * Environments "durability_0" and "durability_negative" (-1): durability 0 (or less) deactivates the durability.
      * The shears are not damaged by usage.
      */
     public static void zeroMakesShearsUnbreakable(GameTestHelper helper) {

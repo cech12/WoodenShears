@@ -156,13 +156,13 @@ public final class BlockTests {
         helper.succeed();
     }
 
+    /** Position where both halves of double plants are placed for the loot comparison. */
+    private static final BlockPos DOUBLE_PLANT_POS = TestUtils.CENTER;
+
     /**
      * Blocks whose drops are known to depend on shears. They must be detected as shears specific, otherwise the
      * comparison in {@link #dropsLikeVanillaShears} would silently check nothing.
      */
-    /** Position where both halves of double plants are placed for the loot comparison. */
-    private static final BlockPos DOUBLE_PLANT_POS = TestUtils.CENTER;
-
     private static final List<Block> KNOWN_SHEARS_BLOCKS = List.of(
             Blocks.OAK_LEAVES, Blocks.COBWEB, Blocks.SHORT_GRASS, Blocks.TALL_GRASS, Blocks.FERN, Blocks.LARGE_FERN,
             Blocks.DEAD_BUSH, Blocks.VINE, Blocks.GLOW_LICHEN, Blocks.SEAGRASS, Blocks.TALL_SEAGRASS, Blocks.HANGING_ROOTS,

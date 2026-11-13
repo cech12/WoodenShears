@@ -1,0 +1,64 @@
+# AGENTS.md
+
+Instructions for AI coding agents working on this repository.
+
+## About the mod
+
+Wooden Shears adds shears crafted from two planks. They behave like vanilla shears (shearing mobs, carving
+pumpkins, harvesting beehives, disarming tripwires, block drops, dispensers), have a configurable durability
+(`durability`, default 50, 0 = unbreakable), can be repaired by combining two of them and are a furnace fuel.
+The complete feature catalog and the matching tests are in [TESTING.md](TESTING.md).
+
+## Project structure
+
+- `common/` - all game logic, mixins that work on every loader, resources and data (recipes, tags, lang, textures).
+  `common/src/gametest/` contains all game tests (vanilla API only).
+- `fabric/`, `forge/`, `neoforge/` - loader specific code only: registration, config implementation, loader mixins.
+  `<loader>/src/gametest/` is a thin adapter that registers the common tests. Never put test logic there.
+- `buildSrc/` - shared Gradle logic (`multiloader-common.gradle`, `multiloader-loader.gradle`, incl. the gametest
+  source set wiring).
+- `scripts/` - server start test (`server-starttest.sh`, mods in `server-starttest.deps`).
+- Integrations: Cloth Config (required) and ModMenu (optional) on Fabric only.
+
+## Build and test
+
+```bash
+./gradlew build                              # all loaders, release jars in <loader>/build/libs
+./gradlew runGameTestServer                  # game tests of all loaders
+./gradlew :fabric:runGameTestServer          # game tests of one loader (also :forge:, :neoforge:)
+scripts/server-starttest.sh <fabric|forge|neoforge> [--with-integrations]   # needs Docker, curl, jq; run after build
+```
+
+The game test task fails if a test fails or no test was found. CI (`.github/workflows/cicd-workflow.yml`) runs build,
+game tests and server start test for every loader on every pull request.
+
+## Conventions
+
+- All versions live in `gradle.properties`. Every new field must also be added to the `expandProps` map in
+  `buildSrc/src/main/groovy/multiloader-common.gradle`.
+- One branch per Minecraft version, the default branch is `26.x`.
+- `CHANGELOG.md` follows Keep a Changelog, version scheme `<MC version>-<mod version>` (e.g. `26.3-4.2.1.0`).
+  Bugfix entries look like "... (thanks to X for the report) #N".
+- Every new feature or bugfix gets a game test (bugfixes as regression test that names the issue), and the feature
+  table in `TESTING.md` is updated. Check that the new test fails when the feature is broken.
+- Each test needs a test instance json in `common/src/gametest/resources/data/woodenshears/test_instance/`.
+
+## Do not
+
+- Push directly to version branches (`26.x`, `1.21.1`, ...) or `main`. Use a feature branch and a pull request.
+- Create tags or releases, change `mod_version`, touch the publish jobs of the CI or any secrets.
+- Change mod behavior in a test PR. If a test reveals a bug, mark it with `KnownIssues` and open an issue.
+
+## Mod specific notes
+
+- The durability is not stored in the item: `DataComponentHolderMixin` (common) answers `MAX_DAMAGE`/`DAMAGE`
+  from the config, `RepairItemRecipeMixin` removes the stored max damage after repairing. Config changes therefore
+  apply to existing items.
+- Fabric needs mixins for every vanilla `is(Items.SHEARS)` check (`fabric/.../mixin`, entity/block interactions,
+  leash knot, tripwire) and `MatchToolMixin` for loot conditions. When a new Minecraft version adds shears
+  interactions, check `block/drops_like_vanilla_shears` and the entity tests on Fabric first. Forge and NeoForge
+  handle shears via their own tool actions/tags; some interactions there depended on loader PRs (copper golem, leash).
+- Data pack `match_tool` conditions with `minecraft:shears` only accept wooden shears on Fabric (known issue, see
+  TESTING.md).
+- Cloth Config and ModMenu are often not yet available for a new Minecraft version. When they are temporarily
+  removed, adjust `scripts/server-starttest.deps` as well.

@@ -31,7 +31,8 @@ jobs:
     with:
       loaders: '["fabric", "forge", "neoforge"]'
   publish-github:
-    needs: build
+    # only publish what passed all tests
+    needs: [ build, gametest, server-starttest ]
     if: startsWith(github.ref, 'refs/tags/')
     name: Publish Github
     uses: cech12/MinecraftModActions/.github/workflows/multi-publish-github.yml@main

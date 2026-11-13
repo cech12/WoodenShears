@@ -158,7 +158,8 @@ fi
 # Problems in the server log. Known harmless lines can be excluded in scripts/server-starttest.allowlist (one regex per line).
 SERVER_LOG="$WORK/logs/container.log"
 PROBLEMS="$WORK/logs/problems.log"
-grep -inE "exception|mixin.*(error|fail)|error.*${MOD_ID}|${MOD_ID}.*error|crash" "$SERVER_LOG" > "$PROBLEMS" || true
+# (crashes are detected via the crash-reports directory below, "crash" alone matches mod names like fabric-crash-report-info)
+grep -inE "exception|mixin.*(error|fail)|error.*${MOD_ID}|${MOD_ID}.*error" "$SERVER_LOG" > "$PROBLEMS" || true
 if [ -s "$PROBLEMS" ] && [ -f scripts/server-starttest.allowlist ]; then
     grep -vEf <(grep -vE '^\s*(#|$)' scripts/server-starttest.allowlist) "$PROBLEMS" > "$PROBLEMS.tmp" || true
     mv "$PROBLEMS.tmp" "$PROBLEMS"
@@ -185,7 +186,7 @@ if [ "$FAILED" -ne 0 ]; then
     log ""
     log "Last lines of the server log:"
     log '```'
-    tail -n 60 "$SERVER_LOG" >> "$SUMMARY"
+    tail -n 60 "$SERVER_LOG" | tee -a "$SUMMARY"
     log '```'
     echo "Server start test FAILED. Logs: $WORK/logs"
     exit 1

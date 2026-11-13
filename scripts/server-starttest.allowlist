@@ -1,0 +1,10 @@
+# Known harmless lines of the server log that the server start test (scripts/server-starttest.sh) ignores.
+# One extended regex per line. Keep the patterns as specific as possible and add the reason.
+
+# Forge/NeoForge on Linux: Netty probes the macOS-only kqueue transport while the debug log file is written
+An exception occurred processing Appender DebugFile
+AppenderLoggingException: java\.lang\.NoClassDefFoundError: Could not initialize class io\.netty\.channel\.kqueue\.Native
+ExceptionInInitializerError: Exception java\.lang\.IllegalStateException: Only supported on OSX/BSD
+
+# Forge: LAN advertising of the dedicated server fails, because the container has no broadcast network
+java\.net\.SocketException: Network is unreachable

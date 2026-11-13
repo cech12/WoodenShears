@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "woodenshears:entity/shears_mooshroom",
+  "environment": "woodenshears:default",
+  "structure": "woodenshears:platform",
+  "max_ticks": 100
+}

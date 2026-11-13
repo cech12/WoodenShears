@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "woodenshears:block/harvests_full_beehives",
+  "environment": "woodenshears:default",
+  "structure": "woodenshears:platform",
+  "max_ticks": 100
+}

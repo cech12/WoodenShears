@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "woodenshears:repair/not_possible_when_unbreakable",
+  "environment": "woodenshears:durability_0",
+  "structure": "woodenshears:platform",
+  "max_ticks": 100
+}

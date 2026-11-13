@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "woodenshears:durability/custom_value",
+  "environment": "woodenshears:durability_200",
+  "structure": "woodenshears:platform",
+  "max_ticks": 100
+}

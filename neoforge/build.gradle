@@ -37,10 +37,18 @@ neoForge {
             this.file("runs/server").createParentDirectories()
             gameDirectory = this.mkdir(this.file("runs/server"))
         }
+        // GameTests (see TESTING.md): ./gradlew :neoforge:runGameTestServer
+        gameTestServer {
+            type = "gameTestServer"
+            sourceSet = sourceSets.gametest
+            gameDirectory = this.mkdir(this.file("runs/gametest"))
+            programArguments.addAll '--tests', "${mod_id}:*".toString(), '--report', file('build/gametest-report.xml').getAbsolutePath()
+        }
     }
     mods {
         "${mod_id}" {
             sourceSet sourceSets.main
+            sourceSet sourceSets.gametest
         }
     }
 }

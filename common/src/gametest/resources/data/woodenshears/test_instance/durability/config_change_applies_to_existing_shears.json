@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "woodenshears:durability/config_change_applies_to_existing_shears",
+  "environment": "woodenshears:durability_dynamic",
+  "structure": "woodenshears:platform",
+  "max_ticks": 100
+}

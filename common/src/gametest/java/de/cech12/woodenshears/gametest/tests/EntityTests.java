@@ -150,10 +150,16 @@ public final class EntityTests {
         return items.next().value();
     }
 
+    // Positions of the wooden and the vanilla shears run of the equipment tests. They are 4 blocks apart and the drop is
+    // searched within 1.5 blocks, so a run never finds the drop of the other one.
+    private static final BlockPos WOODEN_POS = TestUtils.CENTER.west(2);
+    private static final BlockPos VANILLA_POS = TestUtils.CENTER.east(2);
+    private static final double DROP_RADIUS = 1.5;
+
     /** Shears cut off equipment like a saddle, with the same durability loss as vanilla shears. */
     public static void removesSaddle(GameTestHelper helper) {
-        ItemStack wooden = removeSaddle(helper, TestUtils.CENTER.west(), TestUtils.woodenShears());
-        ItemStack vanilla = removeSaddle(helper, TestUtils.CENTER.east(), new ItemStack(Items.SHEARS));
+        ItemStack wooden = removeSaddle(helper, WOODEN_POS, TestUtils.woodenShears());
+        ItemStack vanilla = removeSaddle(helper, VANILLA_POS, new ItemStack(Items.SHEARS));
         TestUtils.assertDamage(helper, wooden, vanilla.getDamageValue(), "after removing a saddle (like vanilla shears)");
         helper.succeed();
     }
@@ -164,7 +170,7 @@ public final class EntityTests {
         ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, shears);
         assertConsumed(helper, TestUtils.interact(player, pig), "saddled pig with " + shears.getItem());
         helper.assertTrue(pig.getItemBySlot(EquipmentSlot.SADDLE).isEmpty(), "saddle was not removed by " + shears.getItem());
-        helper.assertItemEntityPresent(Items.SADDLE, pos, 2);
+        helper.assertItemEntityPresent(Items.SADDLE, pos, DROP_RADIUS);
         return player.getMainHandItem();
     }
 
@@ -173,8 +179,8 @@ public final class EntityTests {
      * shears.
      */
     public static void removesWolfArmor(GameTestHelper helper) {
-        ItemStack wooden = removeWolfArmor(helper, TestUtils.CENTER.west(), TestUtils.woodenShears());
-        ItemStack vanilla = removeWolfArmor(helper, TestUtils.CENTER.east(), new ItemStack(Items.SHEARS));
+        ItemStack wooden = removeWolfArmor(helper, WOODEN_POS, TestUtils.woodenShears());
+        ItemStack vanilla = removeWolfArmor(helper, VANILLA_POS, new ItemStack(Items.SHEARS));
         TestUtils.assertDamage(helper, wooden, vanilla.getDamageValue(), "after removing wolf armor (like vanilla shears)");
         helper.succeed();
     }
@@ -186,7 +192,7 @@ public final class EntityTests {
         wolf.setItemSlot(EquipmentSlot.BODY, new ItemStack(Items.WOLF_ARMOR));
         assertConsumed(helper, TestUtils.interact(player, wolf), "wolf with armor and " + shears.getItem());
         helper.assertTrue(wolf.getItemBySlot(EquipmentSlot.BODY).isEmpty(), "wolf armor was not removed by " + shears.getItem());
-        helper.assertItemEntityPresent(Items.WOLF_ARMOR, pos, 2);
+        helper.assertItemEntityPresent(Items.WOLF_ARMOR, pos, DROP_RADIUS);
         return player.getMainHandItem();
     }
 

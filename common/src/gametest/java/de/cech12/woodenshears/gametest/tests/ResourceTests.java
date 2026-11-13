@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -61,23 +62,26 @@ public final class ResourceTests {
         helper.assertTrue(english != null, "resource " + LANG_DIR + "en_us.json is missing");
         try {
             URI uri = english.toURI();
-            Path dir;
             try {
-                dir = Path.of(uri).getParent();
+                return listLanguages(Path.of(uri).getParent());
             } catch (FileSystemNotFoundException e) {
-                // jar that is not opened as file system yet
-                FileSystems.newFileSystem(uri, Map.of());
-                dir = Path.of(uri).getParent();
-            }
-            try (Stream<Path> files = Files.list(dir)) {
-                return files.map(file -> file.getFileName().toString())
-                        .filter(name -> name.endsWith(".json"))
-                        .map(name -> name.substring(0, name.length() - ".json".length()))
-                        .sorted().toList();
+                // resources in a jar that is not opened as file system yet
+                try (FileSystem jar = FileSystems.newFileSystem(uri, Map.of())) {
+                    return listLanguages(jar.provider().getPath(uri).getParent());
+                }
             }
         } catch (URISyntaxException | IOException | RuntimeException e) {
             helper.fail("cannot list the language files in " + english + ": " + e);
             return List.of();
+        }
+    }
+
+    private static List<String> listLanguages(Path dir) throws IOException {
+        try (Stream<Path> files = Files.list(dir)) {
+            return files.map(file -> file.getFileName().toString())
+                    .filter(name -> name.endsWith(".json"))
+                    .map(name -> name.substring(0, name.length() - ".json".length()))
+                    .sorted().toList();
         }
     }
 

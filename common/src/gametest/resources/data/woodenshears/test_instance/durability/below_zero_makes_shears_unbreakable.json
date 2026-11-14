@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "woodenshears:durability/below_zero_makes_shears_unbreakable",
+  "environment": "woodenshears:durability_negative",
+  "structure": "woodenshears:platform",
+  "max_ticks": 100
+}

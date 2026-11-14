@@ -59,8 +59,10 @@ and game tests in one job, then the server start test, for every loader on every
   apply to existing items.
 - Fabric needs mixins for every vanilla `is(Items.SHEARS)` check (`fabric/.../mixin`, entity/block interactions,
   leash knot, tripwire) and `MatchToolMixin` for loot conditions. When a new Minecraft version adds shears
-  interactions, check `block/drops_like_vanilla_shears` and the entity tests on Fabric first. Forge and NeoForge
-  handle shears via their own tool actions/tags; some interactions there depended on loader PRs (copper golem, leash).
+  interactions, check `block/drops_like_vanilla_shears` and the entity tests on Fabric first. The drop test fails if
+  a new vanilla loot table checks for shears; then add the block and its shears drop to `VANILLA_SHEARS_DROPS`
+  (`BlockTests`). Forge and NeoForge handle shears via their own tool actions/tags; some interactions there depended
+  on loader PRs (copper golem, leash).
 - Data pack `match_tool` conditions that name `minecraft:shears` directly only accept wooden shears on Fabric. This is
   intended (Forge/NeoForge use their tool actions via `minecraft:tool/can_shear`), see "Data packs" in TESTING.md.
 - Cloth Config and ModMenu are often not yet available for a new Minecraft version. The server start test reads them

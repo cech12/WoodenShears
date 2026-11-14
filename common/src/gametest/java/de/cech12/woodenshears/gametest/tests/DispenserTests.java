@@ -1,7 +1,5 @@
 package de.cech12.woodenshears.gametest.tests;
 
-import de.cech12.woodenshears.gametest.KnownIssues;
-import de.cech12.woodenshears.gametest.Platforms;
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
 import net.minecraft.core.BlockPos;
@@ -24,8 +22,6 @@ import net.minecraft.world.level.block.BeehiveBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
-
-import java.util.Set;
 
 /**
  * Dispensers use wooden shears like vanilla shears.
@@ -70,14 +66,12 @@ public final class DispenserTests {
     public static void shearsMooshroom(GameTestHelper helper) {
         helper.spawnWithNoFreeWill(EntityTypes.MOOSHROOM, TARGET);
         DispenserBlockEntity dispenser = dispense(helper);
-        helper.startSequence()
-                .thenWaitUntil(() -> {
-                    helper.assertEntityPresent(EntityTypes.COW);
-                    helper.assertEntityNotPresent(EntityTypes.MOOSHROOM);
-                    TestUtils.assertDamage(helper, dispenser.getItem(0), 1, "in dispenser after shearing a mooshroom");
-                })
-                .thenExecute(() -> KnownIssues.run(helper, "Forge 65.0.0 (26.2): sheared mooshrooms drop the shears instead of the mushrooms (MushroomCow#shearInternal adds the tool instead of the drop, also with vanilla shears), fixed in Forge 65.0.1", Set.of(Platforms.FORGE), () ->
-                        helper.assertItemEntityPresent(Items.RED_MUSHROOM)));
+        helper.succeedWhen(() -> {
+            helper.assertEntityPresent(EntityTypes.COW);
+            helper.assertEntityNotPresent(EntityTypes.MOOSHROOM);
+            helper.assertItemEntityPresent(Items.RED_MUSHROOM);
+            TestUtils.assertDamage(helper, dispenser.getItem(0), 1, "in dispenser after shearing a mooshroom");
+        });
     }
 
     public static void shearsSnowGolem(GameTestHelper helper) {

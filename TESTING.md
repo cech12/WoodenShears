@@ -99,7 +99,7 @@ test mod (`woodenshears_gametest`), on NeoForge it is part of the main mod. It i
 5. Add the test to the feature table below.
 
 If a test reveals a bug that cannot be fixed in the same change, wrap the assertions in
-`KnownIssues.run(helper, "<issue link>", Set.of(KnownIssues.FORGE), () -> ...)` and open an issue. On the listed
+`KnownIssues.run(helper, "<issue link>", Set.of(Platforms.FORGE), () -> ...)` and open an issue. On the listed
 loaders the test passes while the bug exists and fails as soon as it is fixed, so the marker is not forgotten.
 
 ## Features and tests
@@ -182,7 +182,7 @@ config file. On Forge, setting the value also saves the server config file in `f
 | Beehives and bee nests that are not full (honey level 0 - 4) are not harvested and the shears are not damaged | `block/does_not_harvest_beehives_without_honey` |
 | Cutting a tripwire disarms it (fixed 1.17.1-1.1.0.1) | `block/disarms_tripwire`, control test `block/tripwire_triggers_without_shears` |
 | Using shears on a plant tip stops its growth like vanilla shears, for every growing plant (twisting and weeping vines, cave vines, kelp, ...) | `block/stops_growth_of_plant_tips` |
-| For every block state of every registered block, the drops with wooden shears are the same as with vanilla shears, rolled with 16 fixed seeds per state (reproducible on every run and loader, random hand drops like the 33% of twisting vines cannot hide a difference). This keeps all shears specific loot tables identical on all loaders. The shears specific vanilla blocks must be exactly the 35 blocks whose loot tables check for shears in 26.3 (all leaves, short/tall grass, fern, large fern, short/tall dry grass, bush, dead bush, seagrass, tall seagrass, nether sprouts, hanging roots, pale hanging moss, small dripleaf, glow lichen, vine, cobweb, twisting/weeping vines and their plant blocks); their drops with shears must not depend on the seed and must be the expected item | `block/drops_like_vanilla_shears` |
+| For every block state of every registered block, the drops with wooden shears are the same as with vanilla shears, rolled with fixed seeds (reproducible on every run and loader): every state with one seed, and with 16 seeds every state where the shears make a difference, every state of the known shears blocks and of blocks whose loot table mentions shears, so random hand drops like the 33% of twisting vines cannot hide a difference. The log line shows the number of rolls and the duration. This keeps all shears specific loot tables identical on all loaders. The shears specific vanilla blocks must be exactly the 35 blocks whose loot tables check for shears in 26.3 (all leaves, short/tall grass, fern, large fern, short/tall dry grass, bush, dead bush, seagrass, tall seagrass, nether sprouts, hanging roots, pale hanging moss, small dripleaf, glow lichen, vine, cobweb, twisting/weeping vines and their plant blocks); their drops with shears must not depend on the seed and must be the expected item | `block/drops_like_vanilla_shears` |
 | Breaking leaves, cobweb, grass, fern, dead bush and glow lichen (#11) drops them and damages the shears | `block/breaking_drops_shearable_blocks` |
 
 ### Dispenser

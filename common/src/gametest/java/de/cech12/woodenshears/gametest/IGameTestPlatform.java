@@ -11,7 +11,8 @@ public interface IGameTestPlatform {
      * Loaders with a validating config system (Forge, NeoForge) must apply their range correction here.
      *
      * @param durability raw durability value
-     * @return previous raw config value (not limited to the valid range), to restore it exactly
+     * @return previous stored config value, to restore it exactly (on Fabric it can be outside the valid range, Forge
+     *         and NeoForge only store corrected values)
      */
     int setDurability(int durability);
 

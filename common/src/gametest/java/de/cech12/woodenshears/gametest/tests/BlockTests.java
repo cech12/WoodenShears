@@ -1,5 +1,7 @@
 package de.cech12.woodenshears.gametest.tests;
 
+import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
 import de.cech12.woodenshears.Constants;
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
@@ -8,6 +10,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -190,9 +193,12 @@ public final class BlockTests {
     private static final BlockPos DOUBLE_PLANT_POS = TestUtils.CENTER;
 
     /**
-     * Fixed seeds for the loot rolls. Every block state is rolled with every seed, so the result is the same in every
-     * run and on every loader, and random hand drops (e.g. twisting vines drop themselves with 33% without shears)
-     * cannot hide the shears dependency of a block. Seed 0 is not allowed: vanilla then uses the random of the level.
+     * Fixed seeds for the loot rolls, so the result is the same in every run and on every loader. Every block state is
+     * rolled with the first seed. Block states where the shears make a difference with it, all states of the blocks of
+     * {@link #VANILLA_SHEARS_DROPS} and of blocks whose loot table mentions shears are rolled with every seed, so random
+     * hand drops (e.g. twisting vines drop
+     * themselves with 33% without shears) cannot hide the shears dependency. Seed 0 is not allowed: vanilla then uses the
+     * random of the level.
      */
     private static final long[] LOOT_SEEDS = LongStream.rangeClosed(1, 16).toArray();
 
@@ -227,7 +233,7 @@ public final class BlockTests {
 
     /**
      * For every block state of every registered block (also blocks of other loaded mods), the loot table produces the
-     * same drops with wooden shears as with vanilla shears, with every seed of {@link #LOOT_SEEDS}. This is what keeps
+     * same drops with wooden shears as with vanilla shears, with the seeds of {@link #LOOT_SEEDS}. This is what keeps
      * shears specific drops identical on all loaders: Fabric extends the vanilla shears conditions (MatchToolMixin),
      * Forge/NeoForge use their shears tool action.
      * <p>
@@ -247,6 +253,10 @@ public final class BlockTests {
         List<String> randomShearsDrops = new ArrayList<>();
         Set<String> shearsSpecificBlocks = new TreeSet<>();
         Map<String, Set<String>> shearsDrops = new TreeMap<>();
+        RegistryOps<JsonElement> ops = level.registryAccess().createSerializationContext(JsonOps.INSTANCE);
+        long startTime = System.nanoTime();
+        int states = 0;
+        int stateRolls = 0;
         for (Block block : BuiltInRegistries.BLOCK) {
             var key = block.getLootTable();
             if (key.isEmpty()) {
@@ -255,7 +265,9 @@ public final class BlockTests {
             LootTable table = lootTables.getLootTable(key.get());
             Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
             boolean knownShearsBlock = blockId.getNamespace().equals(Identifier.DEFAULT_NAMESPACE) && VANILLA_SHEARS_DROPS.containsKey(blockId.getPath());
+            boolean allSeeds = knownShearsBlock || mentionsShears(table, ops);
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+                states++;
                 Vec3 lootOrigin = origin;
                 boolean doublePlant = state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF);
                 if (doublePlant) {
@@ -268,7 +280,13 @@ public final class BlockTests {
                 }
                 try {
                     List<ItemStack> firstVanillaDrops = null;
+                    boolean shearsSpecificState = false;
                     for (long seed : LOOT_SEEDS) {
+                        if (seed != LOOT_SEEDS[0] && !allSeeds && !shearsSpecificState) {
+                            // the other seeds only for states where the shears make a difference (keeps the test fast)
+                            break;
+                        }
+                        stateRolls++;
                         List<ItemStack> woodenDrops = table.getRandomItems(params(level, lootOrigin, state, wooden), seed);
                         List<ItemStack> vanillaDrops = table.getRandomItems(params(level, lootOrigin, state, vanilla), seed);
                         List<ItemStack> handDrops = table.getRandomItems(params(level, lootOrigin, state, ItemStack.EMPTY), seed);
@@ -278,6 +296,7 @@ public final class BlockTests {
                         }
                         if (!sameStacks(vanillaDrops, handDrops)) {
                             shearsSpecificBlocks.add(blockId.toString());
+                            shearsSpecificState = true;
                         }
                         if (knownShearsBlock) {
                             if (firstVanillaDrops == null) {
@@ -314,9 +333,21 @@ public final class BlockTests {
                 .filter(entry -> !Set.of(entry.getValue()).equals(shearsDrops.get(entry.getKey())))
                 .map(entry -> entry.getKey() + " drops " + shearsDrops.get(entry.getKey()) + " instead of " + entry.getValue()).sorted().toList();
         helper.assertTrue(wrongDrops.isEmpty(), "unexpected drops with shears: " + wrongDrops);
-        Constants.LOG.info("Compared drops of {} shears specific blocks with vanilla shears ({} seeds per block state): {}",
-                shearsSpecificBlocks.size(), LOOT_SEEDS.length, shearsSpecificBlocks);
+        Constants.LOG.info("Compared drops of {} shears specific blocks with vanilla shears ({} seeds per shears specific block state, "
+                        + "{} block states, {} seed rolls, {} ms): {}", shearsSpecificBlocks.size(), LOOT_SEEDS.length, states, stateRolls,
+                (System.nanoTime() - startTime) / 1_000_000, shearsSpecificBlocks);
         helper.succeed();
+    }
+
+    /**
+     * True if the loot table mentions shears anywhere (vanilla predicate "minecraft:tool/can_shear", the shears tool
+     * action of Forge/NeoForge, shears items or tags), or if it cannot be serialized. Such tables are rolled with every
+     * seed, even if the first seed shows no difference (e.g. a random hand drop that equals the shears drop).
+     */
+    private static boolean mentionsShears(LootTable table, RegistryOps<JsonElement> ops) {
+        return LootTable.DIRECT_CODEC.encodeStart(ops, table).result()
+                .map(json -> json.toString().contains("shear"))
+                .orElse(true);
     }
 
     /** Sets a block without neighbor updates, so plants do not break on the stone floor. */

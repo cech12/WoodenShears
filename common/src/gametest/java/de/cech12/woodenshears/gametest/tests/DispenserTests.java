@@ -54,7 +54,7 @@ public final class DispenserTests {
     }
 
     public static void shearsSheep(GameTestHelper helper) {
-        Sheep sheep = helper.spawn(EntityTypes.SHEEP, TARGET);
+        Sheep sheep = helper.spawnWithNoFreeWill(EntityTypes.SHEEP, TARGET);
         DispenserBlockEntity dispenser = dispense(helper);
         helper.succeedWhen(() -> {
             helper.assertTrue(sheep.isSheared(), "sheep was not sheared by the dispenser");
@@ -64,7 +64,7 @@ public final class DispenserTests {
     }
 
     public static void shearsMooshroom(GameTestHelper helper) {
-        helper.spawn(EntityTypes.MOOSHROOM, TARGET);
+        helper.spawnWithNoFreeWill(EntityTypes.MOOSHROOM, TARGET);
         DispenserBlockEntity dispenser = dispense(helper);
         helper.succeedWhen(() -> {
             helper.assertEntityPresent(EntityTypes.COW);
@@ -75,7 +75,7 @@ public final class DispenserTests {
     }
 
     public static void shearsSnowGolem(GameTestHelper helper) {
-        SnowGolem golem = helper.spawn(EntityTypes.SNOW_GOLEM, TARGET);
+        SnowGolem golem = helper.spawnWithNoFreeWill(EntityTypes.SNOW_GOLEM, TARGET);
         DispenserBlockEntity dispenser = dispense(helper);
         helper.succeedWhen(() -> {
             helper.assertTrue(!golem.hasPumpkin(), "snow golem was not sheared by the dispenser");
@@ -85,7 +85,7 @@ public final class DispenserTests {
     }
 
     public static void shearsBogged(GameTestHelper helper) {
-        Bogged bogged = helper.spawn(EntityTypes.BOGGED, TARGET);
+        Bogged bogged = helper.spawnWithNoFreeWill(EntityTypes.BOGGED, TARGET);
         DispenserBlockEntity dispenser = dispense(helper);
         helper.succeedWhen(() -> {
             helper.assertTrue(bogged.isSheared(), "bogged was not sheared by the dispenser");
@@ -94,7 +94,7 @@ public final class DispenserTests {
     }
 
     public static void shearsCopperGolem(GameTestHelper helper) {
-        CopperGolem golem = helper.spawn(EntityTypes.COPPER_GOLEM, TARGET);
+        CopperGolem golem = helper.spawnWithNoFreeWill(EntityTypes.COPPER_GOLEM, TARGET);
         Item flower = TestUtils.firstOfTag(helper, ItemTags.SHEARABLE_FROM_COPPER_GOLEM);
         golem.setItemSlot(CopperGolem.EQUIPMENT_SLOT_ANTENNA, new ItemStack(flower));
         DispenserBlockEntity dispenser = dispense(helper);
@@ -106,7 +106,7 @@ public final class DispenserTests {
     }
 
     public static void shearsSulfurCube(GameTestHelper helper) {
-        SulfurCube cube = helper.spawn(EntityTypes.SULFUR_CUBE, TARGET);
+        SulfurCube cube = helper.spawnWithNoFreeWill(EntityTypes.SULFUR_CUBE, TARGET);
         Item swallowable = TestUtils.firstOfTag(helper, ItemTags.SULFUR_CUBE_SWALLOWABLE);
         cube.setItemSlot(EquipmentSlot.BODY, new ItemStack(swallowable));
         helper.assertTrue(cube.readyForShearing(), "sulfur cube test setup failed: cube is not ready for shearing");
@@ -129,7 +129,7 @@ public final class DispenserTests {
     }
 
     public static void cutsLeash(GameTestHelper helper) {
-        Pig pig = helper.spawn(EntityTypes.PIG, TARGET);
+        Pig pig = helper.spawnWithNoFreeWill(EntityTypes.PIG, TARGET);
         BlockPos fence = TARGET.east(2);
         helper.setBlock(fence, Blocks.OAK_FENCE);
         pig.setLeashedTo(LeashFenceKnotEntity.getOrCreateKnot(helper.getLevel(), helper.absolutePos(fence)), true);

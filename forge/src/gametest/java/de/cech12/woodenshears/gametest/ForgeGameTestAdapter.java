@@ -36,13 +36,17 @@ public final class ForgeGameTestAdapter implements IGameTestPlatform {
     }
 
     @Override
-    public void setDurability(int durability) {
+    public int setDurability(int durability) {
         try {
             ForgeConfigSpec spec = (ForgeConfigSpec) staticField("SERVER_CONFIG");
             ForgeConfigSpec.IntValue value = (ForgeConfigSpec.IntValue) staticField("DURABILITY");
             ForgeConfigSpec.ValueSpec valueSpec = spec.getSpec().get(value.getPath());
+            int previous = value.get();
+            // like loading a config file: Forge corrects values outside the range (the mod itself does not clamp here).
+            // set() also saves the config file of the test run (runs/gametest), because the spec uses autosave.
             value.set((Integer) valueSpec.correct(durability));
             value.clearCache();
+            return previous;
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Cannot change durability config", e);
         }

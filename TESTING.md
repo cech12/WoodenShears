@@ -14,7 +14,14 @@ they reuse the Minecraft setup and the compiled classes of the build. The server
 needs the release jars), and publishing on a tag only starts when build, game tests and server start test succeeded.
 Once a week (`.github/workflows/server-starttest-newest.yml`, also startable manually) the server start test runs with
 the newest loader and dependency versions. It does not block releases, but shows when a new loader or dependency
-release breaks the mod.
+release breaks the mod. GitHub deactivates scheduled workflows of public repositories after 60 days without activity
+in the repository, and mails about failed scheduled runs only go to the user who last changed the cron line. If the
+weekly run is deactivated, enable it again in the Actions tab of the repository.
+
+The CI depends on external services: the shared workflows and the server start script are used from `@main` of
+[cech12/MinecraftModActions](https://github.com/cech12/MinecraftModActions), the server start test needs Docker Hub
+(image `itzg/minecraft-server`) and the Modrinth API (to resolve the dependency versions). If one of them is not
+available, the server start test fails and a release on a tag is not published until the run is repeated.
 
 ## Running the tests locally
 
@@ -125,6 +132,14 @@ loader differences check the expected behavior of each loader (see "Data packs")
 | Values below 0 behave like 0 | `durability/below_zero_makes_shears_unbreakable` |
 | Shears break after 50 uses | `durability/shears_break_when_used_up` |
 | Config changes apply to already existing shears | `durability/config_change_applies_to_existing_shears` |
+
+The limits of `above_maximum_is_limited` and `below_zero_makes_shears_unbreakable` are implemented differently per
+loader: on Fabric the mod itself limits the value (`Math.clamp` in `FabricConfigHelper`), so the test checks the mod
+code. On Forge and NeoForge the config system corrects values outside the range when it loads the config file
+(`defineInRange`). The game test adapter of these loaders applies the same correction (`ValueSpec.correct`) when it
+sets the value, so there the tests only check that the range of the config spec is 0 - 10000, not the loading of a
+config file. On Forge, setting the value also saves the server config file in `forge/runs/gametest`
+(`autosave`); this only affects the local test run directory.
 
 ### Crafting and repair
 

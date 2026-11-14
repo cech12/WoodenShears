@@ -3,7 +3,6 @@ package de.cech12.woodenshears.gametest;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import de.cech12.woodenshears.platform.Services;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.server.level.ServerLevel;
 
@@ -26,9 +25,7 @@ public record DurabilityConfigEnvironment(int durability) implements TestEnviron
 
     @Override
     public Integer setup(ServerLevel level) {
-        int previous = Services.CONFIG.getDurability();
-        GameTestPlatform.INSTANCE.setDurability(this.durability);
-        return previous;
+        return GameTestPlatform.INSTANCE.setDurability(this.durability);
     }
 
     @Override

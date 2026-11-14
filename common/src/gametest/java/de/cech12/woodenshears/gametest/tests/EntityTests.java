@@ -22,6 +22,7 @@ import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.entity.animal.wolf.Wolf;
 import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.cubemob.SulfurCube;
 import net.minecraft.world.entity.monster.skeleton.Bogged;
 import net.minecraft.world.item.Item;
@@ -29,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -235,27 +237,44 @@ public final class EntityTests {
         List<String> problems = new ArrayList<>();
         for (Equipment equipment : cases) {
             String name = BuiltInRegistries.ENTITY_TYPE.getKey(equipment.type()) + " " + BuiltInRegistries.ITEM.getKey(equipment.item());
-            int vanilla = shearEquipment(helper, equipment, new ItemStack(Items.SHEARS));
-            int wooden = shearEquipment(helper, equipment, TestUtils.woodenShears());
-            if (vanilla < 0) {
-                problems.add(name + ": test setup broken, vanilla shears do not remove it");
-            } else if (wooden != vanilla) {
-                problems.add(name + (wooden < 0 ? ": not removed by wooden shears" : ": durability loss " + wooden + " instead of " + vanilla));
+            ShearResult vanilla = shearEquipment(helper, equipment, new ItemStack(Items.SHEARS));
+            ShearResult wooden = shearEquipment(helper, equipment, TestUtils.woodenShears());
+            if (!vanilla.removed() || !vanilla.dropped()) {
+                problems.add(name + ": test setup broken, vanilla shears do not remove and drop it (" + vanilla + ")");
+            } else if (!wooden.removed()) {
+                problems.add(name + ": not removed by wooden shears");
+            } else if (!wooden.dropped()) {
+                problems.add(name + ": removed by wooden shears, but not dropped");
+            } else if (wooden.damage() != vanilla.damage()) {
+                problems.add(name + ": durability loss " + wooden.damage() + " instead of " + vanilla.damage());
             }
         }
         helper.assertTrue(problems.isEmpty(), "equipment removal differs from vanilla shears: " + problems);
         helper.succeed();
     }
 
-    /** Puts the equipment on a new mob and uses the shears on it. Returns the durability loss, or -1 if it was not removed. */
-    private static int shearEquipment(GameTestHelper helper, Equipment equipment, ItemStack shears) {
+    /**
+     * Result of using shears on equipment.
+     *
+     * @param removed the equipment slot is empty
+     * @param dropped the equipment was dropped as item entity
+     * @param damage durability loss of the shears
+     */
+    private record ShearResult(boolean removed, boolean dropped, int damage) {}
+
+    /** Puts the equipment on a new mob, uses the shears on it, and removes the mob and all dropped items afterward. */
+    private static ShearResult shearEquipment(GameTestHelper helper, Equipment equipment, ItemStack shears) {
         Mob mob = helper.spawn(equipment.type(), TestUtils.CENTER);
         mob.setItemSlot(equipment.slot(), new ItemStack(equipment.item()));
         ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, shears);
         TestUtils.interact(player, mob);
         boolean removed = mob.getItemBySlot(equipment.slot()).isEmpty();
+        AABB area = mob.getBoundingBox().inflate(DROP_RADIUS);
+        List<ItemEntity> drops = helper.getLevel().getEntitiesOfClass(ItemEntity.class, area);
+        boolean dropped = drops.stream().anyMatch(drop -> drop.getItem().is(equipment.item()));
+        drops.forEach(ItemEntity::discard);
         mob.discard();
-        return removed ? player.getMainHandItem().getDamageValue() : -1;
+        return new ShearResult(removed, dropped, player.getMainHandItem().getDamageValue());
     }
 
     private static LeashFenceKnotEntity leashToFence(GameTestHelper helper, Pig pig, BlockPos fencePos) {

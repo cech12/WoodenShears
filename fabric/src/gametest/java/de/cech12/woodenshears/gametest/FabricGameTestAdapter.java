@@ -18,8 +18,11 @@ public final class FabricGameTestAdapter implements ModInitializer, IGameTestPla
     }
 
     @Override
-    public void setDurability(int durability) {
-        AutoConfig.getConfigHolder(FabricConfigHelper.class).getConfig().DURABILITY = durability;
+    public int setDurability(int durability) {
+        FabricConfigHelper config = AutoConfig.getConfigHolder(FabricConfigHelper.class).getConfig();
+        int previous = config.DURABILITY;
+        config.DURABILITY = durability;
+        return previous;
     }
 
 }

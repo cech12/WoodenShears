@@ -15,6 +15,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -66,7 +67,14 @@ public final class ResourceTests {
                 return listLanguages(Path.of(uri).getParent());
             } catch (FileSystemNotFoundException e) {
                 // resources in a jar that is not opened as file system yet
-                try (FileSystem jar = FileSystems.newFileSystem(uri, Map.of())) {
+                FileSystem jar;
+                try {
+                    jar = FileSystems.newFileSystem(uri, Map.of());
+                } catch (FileSystemAlreadyExistsException opened) {
+                    // opened by someone else in the meantime: use it, but do not close it
+                    return listLanguages(FileSystems.getFileSystem(uri).provider().getPath(uri).getParent());
+                }
+                try (jar) {
                     return listLanguages(jar.provider().getPath(uri).getParent());
                 }
             }

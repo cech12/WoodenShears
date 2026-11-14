@@ -11,7 +11,8 @@ public interface IGameTestPlatform {
      * Loaders with a validating config system (Forge, NeoForge) must apply their range correction here.
      *
      * @param durability raw durability value
+     * @return previous raw config value (not limited to the valid range), to restore it exactly
      */
-    void setDurability(int durability);
+    int setDurability(int durability);
 
 }

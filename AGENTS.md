@@ -29,7 +29,7 @@ The complete feature catalog and the matching tests are in [TESTING.md](TESTING.
 ./gradlew runGameTestServer                  # game tests of all loaders
 ./gradlew :fabric:runGameTestServer          # game tests of one loader (also :forge:, :neoforge:)
 curl -fsSL https://raw.githubusercontent.com/cech12/MinecraftModActions/main/scripts/server-starttest.sh \
-    | bash -s -- <fabric|forge|neoforge> [--with-integrations]   # server start test, needs Docker, curl, jq; run after build
+    | bash -s -- <fabric|forge|neoforge> [--versions <build|minimum|newest>] [--with-integrations]   # needs Docker, curl, Python 3.11+
 ```
 
 The game test task fails if a test fails or no test was found. CI (`.github/workflows/cicd-workflow.yml`) runs build

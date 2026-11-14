@@ -18,8 +18,7 @@ jobs:
   server-starttest:
     needs: build
     name: Server Start Test
-    uses: cech12/MinecraftModActions/.github/workflows/server-starttest.yml@feature/starttest-metadata-dependencies
+    uses: cech12/MinecraftModActions/.github/workflows/server-starttest.yml@main
     with:
       loaders: '["fabric", "forge", "neoforge"]'
       versions: '["newest"]'
-      actions-ref: feature/starttest-metadata-dependencies

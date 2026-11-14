@@ -23,10 +23,9 @@ jobs:
   server-starttest:
     needs: build
     name: Server Start Test
-    uses: cech12/MinecraftModActions/.github/workflows/server-starttest.yml@feature/starttest-metadata-dependencies
+    uses: cech12/MinecraftModActions/.github/workflows/server-starttest.yml@main
     with:
       loaders: '["fabric", "forge", "neoforge"]'
-      actions-ref: feature/starttest-metadata-dependencies
   publish-github:
     # only publish what passed all tests (build includes the game tests)
     needs: [ build, server-starttest ]

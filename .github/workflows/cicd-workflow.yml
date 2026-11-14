@@ -26,7 +26,6 @@ jobs:
     uses: cech12/MinecraftModActions/.github/workflows/server-starttest.yml@feature/starttest-metadata-dependencies
     with:
       loaders: '["fabric", "forge", "neoforge"]'
-      versions: '["build", "minimum", "newest"]'
       actions-ref: feature/starttest-metadata-dependencies
   publish-github:
     # only publish what passed all tests (build includes the game tests)

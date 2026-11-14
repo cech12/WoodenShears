@@ -6,11 +6,14 @@ Wooden Shears has two automated test levels. Both run in CI on every push and pu
 | Level | What it checks | Where it runs |
 |---|---|---|
 | **GameTests** | Every feature of the mod (see table below) in a real game test server | Gradle (`runGameTestServer`), development environment |
-| **Server start test** | The built release jar starts cleanly on a real dedicated server, with and without the optional integrations | Docker image [itzg/minecraft-server](https://github.com/itzg/docker-minecraft-server) |
+| **Server start test** | The built release jar starts cleanly on a real dedicated server, with and without the optional integrations, with the build and the minimum versions of loader and dependencies (and weekly with the newest versions) | Docker image [itzg/minecraft-server](https://github.com/itzg/docker-minecraft-server) |
 
 In CI (`.github/workflows/cicd-workflow.yml`) the game tests run in the build job right after `./gradlew build`, so
 they reuse the Minecraft setup and the compiled classes of the build. The server start test runs after the build (it
 needs the release jars), and publishing on a tag only starts when build, game tests and server start test succeeded.
+Once a week (`.github/workflows/server-starttest-newest.yml`, also startable manually) the server start test runs with
+the newest loader and dependency versions. It does not block releases, but shows when a new loader or dependency
+release breaks the mod.
 
 ## Running the tests locally
 
@@ -26,31 +29,33 @@ GameTests (Java 25 toolchain is provisioned by Gradle):
 The task fails if a test fails or if no test was found. A JUnit report is written to
 `<loader>/build/gametest-report.xml`, logs are in `<loader>/runs/gametest/logs/`.
 
-Server start test (needs bash, Docker, curl and jq; on Windows use WSL or Git Bash with Docker Desktop). The script is
+Server start test (needs bash, Docker, curl and Python 3.11+; on Windows use WSL or Git Bash with Docker Desktop). The script is
 shared by all mods and lives in [cech12/MinecraftModActions](https://github.com/cech12/MinecraftModActions)
 (`scripts/server-starttest.sh`):
 
 ```bash
 ./gradlew build
 S=https://raw.githubusercontent.com/cech12/MinecraftModActions/main/scripts/server-starttest.sh
-curl -fsSL $S | bash -s -- fabric                        # mod + required mods
+curl -fsSL $S | bash -s -- fabric                        # mod + required mods, build versions
 curl -fsSL $S | bash -s -- fabric --with-integrations    # + optional integrations
+curl -fsSL $S | bash -s -- fabric --versions minimum     # oldest allowed versions (also: newest)
 curl -fsSL $S | bash -s -- forge
 curl -fsSL $S | bash -s -- neoforge
 ```
 
-The server runs with the Minecraft version of `gradle.properties`, but with the newest loader version and the newest
-versions of the dependencies, so that the test notices when a new loader or dependency release breaks the mod. The
-dependencies are read from the metadata of the jar (`fabric.mod.json`, `mods.toml`, `neoforge.mods.toml`): required
-dependencies are always installed, optional ones (on Fabric `recommends`/`suggests`, e.g. ModMenu) only with
-`--with-integrations`. Mod ids with another name on Modrinth are mapped centrally in `scripts/server-starttest-mods.txt`
-of MinecraftModActions. The test fails if the server does not log "Done" within 10 minutes, stops again right after
-the start, writes a crash report, logs exceptions, mixin errors or errors mentioning the mod id, or if the mod is not
-in the mod list of the loader. Known harmless log lines can be excluded in `scripts/server-starttest.allowlist` (one
-regex per line, in addition to the built-in ones of the script). Logs and a summary are written to
-`.server-starttest/<loader>-<mode>/`. `--with-integrations` is skipped (exit 0) for loaders without optional
-dependencies (currently Forge and NeoForge), because it would equal the run without integrations. To reproduce a
-failure with an older loader, set `STARTTEST_LOADER_VERSION`.
+The server runs with the Minecraft version of `gradle.properties`. `--versions` chooses the loader and dependency
+versions, always within the version ranges of the mod metadata (lower and upper bounds): `build` (default) uses the
+versions of `gradle.properties`, `minimum` the oldest versions the mod allows (skipped if they equal the build
+versions), `newest` the newest versions. The dependencies are read from the metadata of the jar (`fabric.mod.json`,
+`mods.toml`, `neoforge.mods.toml`): required dependencies are always installed, optional ones (on Fabric
+`recommends`/`suggests`, e.g. ModMenu) only with `--with-integrations`. Mod ids with another name on Modrinth are mapped
+centrally in `scripts/server-starttest-mods.txt` of MinecraftModActions. The test fails if the server does not log
+"Done" within 10 minutes, stops again right after the start, writes a crash report, logs exceptions, mixin errors or
+errors mentioning the mod id, or if the mod or one of its dependencies is not in the mod list of the loader. Known
+harmless log lines can be excluded in `scripts/server-starttest.allowlist` (one regex per line, in addition to the
+built-in ones of the script). Logs and a summary are written to `.server-starttest/<loader>-<versions>-<mode>/`.
+`--with-integrations` is skipped (exit 0) for loaders without optional dependencies (currently Forge and NeoForge).
+To reproduce a failure with another loader version, set `STARTTEST_LOADER_VERSION`.
 
 ## How the GameTests are organized
 

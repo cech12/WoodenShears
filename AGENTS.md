@@ -18,7 +18,8 @@ The complete feature catalog and the matching tests are in [TESTING.md](TESTING.
 - `buildSrc/` - shared Gradle logic (`multiloader-common.gradle`, `multiloader-loader.gradle`, incl. the gametest
   source set wiring).
 - `scripts/` - harmless log lines of the server start test (`server-starttest.allowlist`). The script is shared and
-  lives in cech12/MinecraftModActions; it reads the dependencies from the mod metadata and uses the newest loader.
+  lives in cech12/MinecraftModActions; it reads the dependencies from the mod metadata and tests with the build and
+  the minimum versions (weekly also with the newest versions, `server-starttest-newest.yml`).
 - Integrations: Cloth Config (required) and ModMenu (optional) on Fabric only.
 
 ## Build and test

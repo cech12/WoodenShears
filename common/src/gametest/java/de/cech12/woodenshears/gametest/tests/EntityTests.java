@@ -2,15 +2,19 @@ package de.cech12.woodenshears.gametest.tests;
 
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.animal.cow.MushroomCow;
 import net.minecraft.world.entity.animal.golem.CopperGolem;
 import net.minecraft.world.entity.animal.golem.SnowGolem;
@@ -25,6 +29,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Right-clicking entities with wooden shears does everything vanilla shears do.
@@ -43,6 +50,7 @@ public final class EntityTests {
         tests.add("entity/shears_sulfur_cube", EntityTests::shearsSulfurCube);
         tests.add("entity/removes_saddle", EntityTests::removesSaddle);
         tests.add("entity/removes_wolf_armor", EntityTests::removesWolfArmor);
+        tests.add("entity/removes_equipment_like_vanilla_shears", EntityTests::removesEquipmentLikeVanillaShears);
         tests.add("entity/cuts_leash_of_entity", EntityTests::cutsLeashOfEntity);
         tests.add("entity/cuts_leash_knot", EntityTests::cutsLeashKnot);
     }
@@ -119,7 +127,7 @@ public final class EntityTests {
     /** 1.21.9-3.6.0.1: the flower of a copper golem can be sheared off. */
     public static void shearsCopperGolem(GameTestHelper helper) {
         CopperGolem golem = helper.spawn(EntityTypes.COPPER_GOLEM, TestUtils.CENTER);
-        Item flower = firstOfTag(helper, ItemTags.SHEARABLE_FROM_COPPER_GOLEM);
+        Item flower = TestUtils.firstOfTag(helper, ItemTags.SHEARABLE_FROM_COPPER_GOLEM);
         golem.setItemSlot(CopperGolem.EQUIPMENT_SLOT_ANTENNA, new ItemStack(flower));
         ServerPlayer player = survivalPlayer(helper);
         assertConsumed(helper, TestUtils.interact(player, golem), "copper golem");
@@ -132,7 +140,7 @@ public final class EntityTests {
     /** Shearing a sulfur cube ejects the swallowed item. */
     public static void shearsSulfurCube(GameTestHelper helper) {
         SulfurCube cube = helper.spawn(EntityTypes.SULFUR_CUBE, TestUtils.CENTER);
-        Item swallowable = firstOfTag(helper, ItemTags.SULFUR_CUBE_SWALLOWABLE);
+        Item swallowable = TestUtils.firstOfTag(helper, ItemTags.SULFUR_CUBE_SWALLOWABLE);
         cube.setItemSlot(EquipmentSlot.BODY, new ItemStack(swallowable));
         helper.assertTrue(cube.readyForShearing(), "sulfur cube test setup failed: cube is not ready for shearing");
         ServerPlayer player = survivalPlayer(helper);
@@ -141,13 +149,6 @@ public final class EntityTests {
         helper.assertItemEntityPresent(swallowable);
         TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after shearing a sulfur cube");
         helper.succeed();
-    }
-
-    /** First item of a vanilla item tag that a test needs, with a clear message if the tag is empty. */
-    private static Item firstOfTag(GameTestHelper helper, TagKey<Item> tag) {
-        var items = BuiltInRegistries.ITEM.getTagOrEmpty(tag).iterator();
-        helper.assertTrue(items.hasNext(), "test setup broken: item tag " + tag.location() + " is empty");
-        return items.next().value();
     }
 
     // Positions of the wooden and the vanilla shears run of the equipment tests. They are 4 blocks apart and the drop is
@@ -193,7 +194,68 @@ public final class EntityTests {
         assertConsumed(helper, TestUtils.interact(player, wolf), "wolf with armor and " + shears.getItem());
         helper.assertTrue(wolf.getItemBySlot(EquipmentSlot.BODY).isEmpty(), "wolf armor was not removed by " + shears.getItem());
         helper.assertItemEntityPresent(Items.WOLF_ARMOR, pos, DROP_RADIUS);
+        // advancement "Shear Brilliance" (minecraft:husbandry/remove_wolf_armor)
+        AdvancementHolder advancement = helper.getLevel().getServer().getAdvancements().get(Identifier.withDefaultNamespace("husbandry/remove_wolf_armor"));
+        helper.assertTrue(advancement != null, "test setup broken: advancement husbandry/remove_wolf_armor is missing");
+        helper.assertTrue(player.getAdvancements().getOrStartProgress(advancement).isDone(),
+                "advancement \"Shear Brilliance\" was not granted after removing wolf armor with " + shears.getItem());
         return player.getMainHandItem();
+    }
+
+    /** Mob, equipment slot and equipment that shears can remove. */
+    private record Equipment(EntityType<? extends Mob> type, EquipmentSlot slot, Item item) {}
+
+    /**
+     * Shears remove saddles, horse and nautilus armor, llama carpets and happy ghast harnesses of every mob that can
+     * wear them (vanilla 1.21.6+), exactly like vanilla shears: same result, same durability loss. Wolf armor needs the
+     * owner, see above.
+     */
+    public static void removesEquipmentLikeVanillaShears(GameTestHelper helper) {
+        Item carpet = TestUtils.firstOfTag(helper, ItemTags.WOOL_CARPETS);
+        Item harness = TestUtils.firstOfTag(helper, ItemTags.HARNESSES);
+        List<Equipment> cases = List.of(
+                new Equipment(EntityTypes.PIG, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.STRIDER, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.HORSE, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.HORSE, EquipmentSlot.BODY, Items.IRON_HORSE_ARMOR),
+                new Equipment(EntityTypes.DONKEY, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.MULE, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.SKELETON_HORSE, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.ZOMBIE_HORSE, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.ZOMBIE_HORSE, EquipmentSlot.BODY, Items.IRON_HORSE_ARMOR),
+                new Equipment(EntityTypes.CAMEL, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.CAMEL_HUSK, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.LLAMA, EquipmentSlot.BODY, carpet),
+                new Equipment(EntityTypes.TRADER_LLAMA, EquipmentSlot.BODY, carpet),
+                new Equipment(EntityTypes.HAPPY_GHAST, EquipmentSlot.BODY, harness),
+                new Equipment(EntityTypes.NAUTILUS, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.NAUTILUS, EquipmentSlot.BODY, Items.IRON_NAUTILUS_ARMOR),
+                new Equipment(EntityTypes.ZOMBIE_NAUTILUS, EquipmentSlot.SADDLE, Items.SADDLE),
+                new Equipment(EntityTypes.ZOMBIE_NAUTILUS, EquipmentSlot.BODY, Items.IRON_NAUTILUS_ARMOR));
+        List<String> problems = new ArrayList<>();
+        for (Equipment equipment : cases) {
+            String name = BuiltInRegistries.ENTITY_TYPE.getKey(equipment.type()) + " " + BuiltInRegistries.ITEM.getKey(equipment.item());
+            int vanilla = shearEquipment(helper, equipment, new ItemStack(Items.SHEARS));
+            int wooden = shearEquipment(helper, equipment, TestUtils.woodenShears());
+            if (vanilla < 0) {
+                problems.add(name + ": test setup broken, vanilla shears do not remove it");
+            } else if (wooden != vanilla) {
+                problems.add(name + (wooden < 0 ? ": not removed by wooden shears" : ": durability loss " + wooden + " instead of " + vanilla));
+            }
+        }
+        helper.assertTrue(problems.isEmpty(), "equipment removal differs from vanilla shears: " + problems);
+        helper.succeed();
+    }
+
+    /** Puts the equipment on a new mob and uses the shears on it. Returns the durability loss, or -1 if it was not removed. */
+    private static int shearEquipment(GameTestHelper helper, Equipment equipment, ItemStack shears) {
+        Mob mob = helper.spawn(equipment.type(), TestUtils.CENTER);
+        mob.setItemSlot(equipment.slot(), new ItemStack(equipment.item()));
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, shears);
+        TestUtils.interact(player, mob);
+        boolean removed = mob.getItemBySlot(equipment.slot()).isEmpty();
+        mob.discard();
+        return removed ? player.getMainHandItem().getDamageValue() : -1;
     }
 
     private static LeashFenceKnotEntity leashToFence(GameTestHelper helper, Pig pig, BlockPos fencePos) {

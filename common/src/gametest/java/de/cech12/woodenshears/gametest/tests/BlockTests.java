@@ -147,13 +147,41 @@ public final class BlockTests {
 
     /** Using shears on the tip of a growing plant (e.g. twisting vines) stops its growth. */
     public static void stopsGrowthOfPlantTips(GameTestHelper helper) {
-        helper.setBlock(TestUtils.CENTER, Blocks.TWISTING_VINES);
-        ServerPlayer player = survivalPlayer(helper);
-        helper.useBlock(TestUtils.CENTER, player);
-        BlockState state = helper.getBlockState(TestUtils.CENTER);
-        helper.assertTrue(state.getBlock() instanceof GrowingPlantHeadBlock head && head.isMaxAge(state), "twisting vines tip still grows: " + state);
-        TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after trimming a plant tip");
+        List<String> tested = new ArrayList<>();
+        List<String> problems = new ArrayList<>();
+        for (Block block : BuiltInRegistries.BLOCK) {
+            if (!(block instanceof GrowingPlantHeadBlock head)) {
+                continue;
+            }
+            String name = BuiltInRegistries.BLOCK.getKey(block).toString();
+            tested.add(name);
+            BlockState vanilla = trimPlantTip(helper, block, new ItemStack(Items.SHEARS));
+            BlockState wooden = trimPlantTip(helper, block, TestUtils.woodenShears());
+            if (vanilla == null || !head.isMaxAge(vanilla)) {
+                problems.add(name + ": test setup broken, vanilla shears do not stop the growth");
+            } else if (!vanilla.equals(wooden)) {
+                problems.add(name + ": " + wooden + " instead of " + vanilla);
+            }
+        }
+        helper.assertTrue(tested.containsAll(List.of("minecraft:twisting_vines", "minecraft:weeping_vines", "minecraft:cave_vines", "minecraft:kelp")),
+                "test setup broken: known plant tips not found, only " + tested);
+        helper.assertTrue(problems.isEmpty(), "using wooden shears on plant tips differs from vanilla shears: " + problems);
         helper.succeed();
+    }
+
+    /** Places a young plant tip, uses the shears on it and returns the new state, or null if the shears were not damaged. */
+    private static BlockState trimPlantTip(GameTestHelper helper, Block block, ItemStack shears) {
+        BlockState young = block.defaultBlockState().setValue(GrowingPlantHeadBlock.AGE, 0);
+        if (young.hasProperty(BlockStateProperties.WATERLOGGED)) {
+            young = young.setValue(BlockStateProperties.WATERLOGGED, true);
+        }
+        helper.setBlock(TestUtils.CENTER, young);
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, shears);
+        helper.useBlock(TestUtils.CENTER, player);
+        BlockState result = helper.getBlockState(TestUtils.CENTER);
+        boolean damaged = player.getMainHandItem().getDamageValue() == 1;
+        helper.setBlock(TestUtils.CENTER, Blocks.AIR);
+        return damaged ? result : null;
     }
 
     /** Position where both halves of double plants are placed for the loot comparison. */

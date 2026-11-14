@@ -1,16 +1,23 @@
 package de.cech12.woodenshears.gametest.tests;
 
 import de.cech12.woodenshears.Constants;
+import de.cech12.woodenshears.gametest.KnownIssues;
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
 import de.cech12.woodenshears.platform.services.IConfigHelper;
 import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.AnvilMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
@@ -19,9 +26,13 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.GameType;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Crafting recipe, recipe unlock advancement and repairing by combining two wooden shears.
@@ -38,6 +49,9 @@ public final class RecipeTests {
         tests.add("recipe/is_in_equipment_category", RecipeTests::isInEquipmentCategory);
         tests.add("recipe/unlocked_by_having_planks", RecipeTests::unlockedByHavingPlanks);
         tests.add("repair/combines_two_damaged_shears", RecipeTests::combinesTwoDamagedShears);
+        tests.add("repair/grindstone_combines_two_damaged_shears", RecipeTests::grindstoneCombinesTwoDamagedShears);
+        tests.add("repair/grindstone_result_follows_config", RecipeTests::grindstoneResultFollowsConfig);
+        tests.add("repair/anvil_combines_two_damaged_shears", RecipeTests::anvilCombinesTwoDamagedShears);
         tests.add("repair/fully_repaired_shears_equal_new_shears", RecipeTests::fullyRepairedShearsEqualNewShears);
         tests.add("repair/not_possible_when_unbreakable", RecipeTests::notPossibleWhenUnbreakable);
     }
@@ -124,6 +138,86 @@ public final class RecipeTests {
         int remaining = (max - 40) + (max - 30) + max * 5 / 100;
         TestUtils.assertDamage(helper, result, max - remaining, "after repair");
         helper.assertTrue(result.getComponentsPatch().forget(type -> type != DataComponents.MAX_DAMAGE).isEmpty(), "repaired wooden shears store a fixed max damage");
+        helper.succeed();
+    }
+
+    private static Holder<Enchantment> enchantment(GameTestHelper helper, ResourceKey<Enchantment> key) {
+        return helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
+    }
+
+    /** Puts two items into the menu inputs (slots 0 and 1) and returns the output (slot 2). */
+    private static ItemStack combine(AbstractContainerMenu menu, ItemStack first, ItemStack second) {
+        menu.getSlot(0).set(first);
+        menu.getSlot(1).set(second);
+        if (menu instanceof AnvilMenu anvil) {
+            anvil.createResult();
+        }
+        return menu.getSlot(2).getItem();
+    }
+
+    /**
+     * Like vanilla shears, two damaged wooden shears can be combined in a grindstone: the remaining durability of both
+     * plus a 5% bonus, enchantments (except curses) are removed.
+     */
+    public static void grindstoneCombinesTwoDamagedShears(GameTestHelper helper) {
+        int max = IConfigHelper.DURABILITY_DEFAULT;
+        ItemStack result = combineInGrindstone(helper);
+        helper.assertTrue(result.is(TestUtils.woodenShearsItem()), "two damaged wooden shears cannot be combined in a grindstone: " + result);
+        int remaining = (max - 40) + (max - 30) + max * 5 / 100;
+        TestUtils.assertDamage(helper, result, Math.max(0, max - remaining), "after combining in a grindstone");
+        helper.assertTrue(result.getEnchantments().isEmpty(), "grindstone did not remove the enchantments: " + result.getEnchantments());
+        helper.succeed();
+    }
+
+    /**
+     * Shears combined in a grindstone do not store a fixed max damage, so config changes still apply to them (like the
+     * crafting repair, #38). Known issue: https://github.com/cech12/WoodenShears/issues/51
+     */
+    public static void grindstoneResultFollowsConfig(GameTestHelper helper) {
+        KnownIssues.run(helper, "https://github.com/cech12/WoodenShears/issues/51",
+                Set.of(KnownIssues.FABRIC, KnownIssues.FORGE, KnownIssues.NEOFORGE), () -> {
+            ItemStack result = combineInGrindstone(helper);
+            helper.assertTrue(result.is(TestUtils.woodenShearsItem()), "two damaged wooden shears cannot be combined in a grindstone: " + result);
+            helper.assertTrue(result.getComponentsPatch().forget(type -> type != DataComponents.MAX_DAMAGE).isEmpty(),
+                    "wooden shears combined in a grindstone store a fixed max damage: " + result.getComponentsPatch());
+        });
+    }
+
+    /** Combines two damaged wooden shears (40 and 30 damage, the first with Efficiency I) in a grindstone. */
+    private static ItemStack combineInGrindstone(GameTestHelper helper) {
+        ItemStack first = TestUtils.woodenShears();
+        first.setDamageValue(40);
+        first.enchant(enchantment(helper, Enchantments.EFFICIENCY), 1);
+        ItemStack second = TestUtils.woodenShears();
+        second.setDamageValue(30);
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, ItemStack.EMPTY);
+        GrindstoneMenu menu = new GrindstoneMenu(0, player.getInventory(), ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(TestUtils.CENTER)));
+        return combine(menu, first, second);
+    }
+
+    /**
+     * Like vanilla shears, two damaged wooden shears can be combined in an anvil: the remaining durability of both plus
+     * a 12% bonus, the enchantments of both are kept. The max damage still follows the config.
+     */
+    public static void anvilCombinesTwoDamagedShears(GameTestHelper helper) {
+        int max = IConfigHelper.DURABILITY_DEFAULT;
+        ItemStack first = TestUtils.woodenShears();
+        first.setDamageValue(40);
+        first.enchant(enchantment(helper, Enchantments.EFFICIENCY), 1);
+        ItemStack second = TestUtils.woodenShears();
+        second.setDamageValue(30);
+        second.enchant(enchantment(helper, Enchantments.UNBREAKING), 1);
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, ItemStack.EMPTY);
+        AnvilMenu menu = new AnvilMenu(0, player.getInventory(), ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(TestUtils.CENTER)));
+        ItemStack result = combine(menu, first, second);
+        helper.assertTrue(result.is(TestUtils.woodenShearsItem()), "two damaged wooden shears cannot be combined in an anvil: " + result);
+        int remaining = (max - 40) + (max - 30) + max * 12 / 100;
+        TestUtils.assertDamage(helper, result, Math.max(0, max - remaining), "after combining in an anvil");
+        helper.assertTrue(result.getEnchantments().getLevel(enchantment(helper, Enchantments.EFFICIENCY)) == 1
+                && result.getEnchantments().getLevel(enchantment(helper, Enchantments.UNBREAKING)) == 1,
+                "anvil did not keep the enchantments of both shears: " + result.getEnchantments());
+        helper.assertTrue(menu.getCost() > 0, "combining in an anvil costs no experience");
+        helper.assertTrue(result.getComponentsPatch().forget(type -> type != DataComponents.MAX_DAMAGE).isEmpty(), "wooden shears combined in an anvil store a fixed max damage");
         helper.succeed();
     }
 

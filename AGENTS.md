@@ -17,7 +17,8 @@ The complete feature catalog and the matching tests are in [TESTING.md](TESTING.
   `<loader>/src/gametest/` is a thin adapter that registers the common tests. Never put test logic there.
 - `buildSrc/` - shared Gradle logic (`multiloader-common.gradle`, `multiloader-loader.gradle`, incl. the gametest
   source set wiring).
-- `scripts/` - server start test (`server-starttest.sh`, mods in `server-starttest.deps`).
+- `scripts/` - server start test config: mods in `server-starttest.deps`, harmless log lines in
+  `server-starttest.allowlist`. The script itself is shared and lives in cech12/MinecraftModActions.
 - Integrations: Cloth Config (required) and ModMenu (optional) on Fabric only.
 
 ## Build and test
@@ -26,11 +27,12 @@ The complete feature catalog and the matching tests are in [TESTING.md](TESTING.
 ./gradlew build                              # all loaders, release jars in <loader>/build/libs
 ./gradlew runGameTestServer                  # game tests of all loaders
 ./gradlew :fabric:runGameTestServer          # game tests of one loader (also :forge:, :neoforge:)
-scripts/server-starttest.sh <fabric|forge|neoforge> [--with-integrations]   # needs Docker, curl, jq; run after build
+curl -fsSL https://raw.githubusercontent.com/cech12/MinecraftModActions/main/scripts/server-starttest.sh \
+    | bash -s -- <fabric|forge|neoforge> [--with-integrations]   # server start test, needs Docker, curl, jq; run after build
 ```
 
-The game test task fails if a test fails or no test was found. CI (`.github/workflows/cicd-workflow.yml`) runs build,
-game tests and server start test for every loader on every pull request.
+The game test task fails if a test fails or no test was found. CI (`.github/workflows/cicd-workflow.yml`) runs build
+and game tests in one job, then the server start test, for every loader on every pull request.
 
 ## Conventions
 

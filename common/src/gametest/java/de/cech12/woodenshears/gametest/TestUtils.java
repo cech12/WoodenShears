@@ -5,9 +5,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -90,6 +90,14 @@ public final class TestUtils {
         boolean present = helper.getLevel().getEntitiesOfClass(ItemEntity.class, helper.getBounds()).stream()
                 .anyMatch(entity -> entity.getItem().is(tag));
         helper.assertTrue(present, "no item of #" + tag.location() + " was dropped");
+    }
+
+
+    /** First item of a vanilla item tag that a test needs, with a clear message if the tag is empty. */
+    public static Item firstOfTag(GameTestHelper helper, TagKey<Item> tag) {
+        var items = BuiltInRegistries.ITEM.getTagOrEmpty(tag).iterator();
+        helper.assertTrue(items.hasNext(), "test setup broken: item tag " + tag.location() + " is empty");
+        return items.next().value();
     }
 
 }

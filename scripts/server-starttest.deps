@@ -1,8 +1,10 @@
-# Mods that are installed next to the mod jar for the server start test (scripts/server-starttest.sh).
-# Versions are taken from gradle.properties, the matching Modrinth version is looked up automatically.
+# Mods that are installed next to the mod jar for the server start test
+# (scripts/server-starttest.sh of cech12/MinecraftModActions). The matching Modrinth version is looked up automatically,
+# required dependencies of these mods are installed automatically.
 #
-# <loader>  <required|optional>  <modrinth project slug>  <gradle.properties key of the version>
+# <loader|*>  <required|optional>  <modrinth project slug>  <version>
 #
+# <version>: a gradle.properties key, "=<version number>" or "latest"
 # required: always installed, the test fails if the version is not available on Modrinth
 # optional: only installed with --with-integrations, skipped (and reported) if not available for this Minecraft version
 fabric      required    fabric-api      fabric_version

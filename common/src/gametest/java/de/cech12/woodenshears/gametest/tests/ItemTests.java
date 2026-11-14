@@ -8,6 +8,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -17,6 +18,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -43,6 +45,7 @@ public final class ItemTests {
         tests.add("item/is_in_common_shears_tag", ItemTests::isInCommonShearsTag);
         tests.add("item/is_enchantable_like_vanilla_shears", ItemTests::isEnchantableLikeVanillaShears);
         tests.add("item/mines_like_vanilla_shears", ItemTests::minesLikeVanillaShears);
+        tests.add("item/loses_durability_per_block_like_vanilla_shears", ItemTests::losesDurabilityPerBlockLikeVanillaShears);
         tests.add("item/is_fuel_like_wooden_tools", ItemTests::isFuelLikeWoodenTools);
         tests.add("item/burns_in_furnace", ItemTests::burnsInFurnace);
     }
@@ -98,6 +101,9 @@ public final class ItemTests {
             }
         });
         helper.assertTrue(differences.isEmpty(), "enchantability differs from vanilla shears for " + differences);
+        // like vanilla shears only enchantable with an anvil, not at the enchanting table
+        helper.assertTrue(Objects.equals(wooden.get(DataComponents.ENCHANTABLE), vanilla.get(DataComponents.ENCHANTABLE)),
+                "enchanting table enchantability differs from vanilla shears: " + wooden.get(DataComponents.ENCHANTABLE));
         helper.succeed();
     }
 
@@ -116,6 +122,33 @@ public final class ItemTests {
             }
         }
         helper.assertTrue(differences.isEmpty(), "mining behavior differs from vanilla shears for " + differences);
+        helper.succeed();
+    }
+
+    /**
+     * #40: breaking a block costs the same durability as with vanilla shears for every block (1 for blocks with
+     * hardness, nothing for instantly broken blocks like fire).
+     */
+    public static void losesDurabilityPerBlockLikeVanillaShears(GameTestHelper helper) {
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, ItemStack.EMPTY);
+        BlockPos pos = helper.absolutePos(TestUtils.CENTER);
+        List<String> differences = new ArrayList<>();
+        int damaging = 0;
+        for (Block block : BuiltInRegistries.BLOCK) {
+            BlockState state = block.defaultBlockState();
+            ItemStack wooden = TestUtils.woodenShears();
+            ItemStack vanilla = new ItemStack(Items.SHEARS);
+            wooden.mineBlock(helper.getLevel(), state, pos, player);
+            vanilla.mineBlock(helper.getLevel(), state, pos, player);
+            if (wooden.getDamageValue() != vanilla.getDamageValue()) {
+                differences.add(BuiltInRegistries.BLOCK.getKey(block) + " (" + wooden.getDamageValue() + " instead of " + vanilla.getDamageValue() + ")");
+            }
+            if (vanilla.getDamageValue() > 0) {
+                damaging++;
+            }
+        }
+        helper.assertTrue(damaging > 0, "test setup broken: vanilla shears lose no durability on any block");
+        helper.assertTrue(differences.isEmpty(), "durability loss when breaking blocks differs from vanilla shears: " + differences);
         helper.succeed();
     }
 

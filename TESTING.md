@@ -8,9 +8,9 @@ Wooden Shears has two automated test levels. Both run in CI on every push and pu
 | **GameTests** | Every feature of the mod (see table below) in a real game test server | Gradle (`runGameTestServer`), development environment |
 | **Server start test** | The built release jar starts cleanly on a real dedicated server, with and without the optional integrations | Docker image [itzg/minecraft-server](https://github.com/itzg/docker-minecraft-server) |
 
-In CI (`.github/workflows/cicd-workflow.yml`) the game tests run in parallel to the build, the server start test
-runs after the build (it needs the release jars), and publishing on a tag only starts when build, game tests and
-server start test succeeded.
+In CI (`.github/workflows/cicd-workflow.yml`) the game tests run in the build job right after `./gradlew build`, so
+they reuse the Minecraft setup and the compiled classes of the build. The server start test runs after the build (it
+needs the release jars), and publishing on a tag only starts when build, game tests and server start test succeeded.
 
 ## Running the tests locally
 
@@ -26,20 +26,25 @@ GameTests (Java 25 toolchain is provisioned by Gradle):
 The task fails if a test fails or if no test was found. A JUnit report is written to
 `<loader>/build/gametest-report.xml`, logs are in `<loader>/runs/gametest/logs/`.
 
-Server start test (needs bash, Docker, curl and jq; on Windows use WSL or Git Bash with Docker Desktop):
+Server start test (needs bash, Docker, curl and jq; on Windows use WSL or Git Bash with Docker Desktop). The script is
+shared by all mods and lives in [cech12/MinecraftModActions](https://github.com/cech12/MinecraftModActions)
+(`scripts/server-starttest.sh`):
 
 ```bash
 ./gradlew build
-scripts/server-starttest.sh fabric                       # mod + required mods
-scripts/server-starttest.sh fabric --with-integrations   # + optional integrations
-scripts/server-starttest.sh forge
-scripts/server-starttest.sh neoforge
+S=https://raw.githubusercontent.com/cech12/MinecraftModActions/main/scripts/server-starttest.sh
+curl -fsSL $S | bash -s -- fabric                        # mod + required mods
+curl -fsSL $S | bash -s -- fabric --with-integrations    # + optional integrations
+curl -fsSL $S | bash -s -- forge
+curl -fsSL $S | bash -s -- neoforge
 ```
 
 All versions come from `gradle.properties`. Additional mods are listed in `scripts/server-starttest.deps`
-(Modrinth slug + `gradle.properties` key of the version). The test fails if the server does not become healthy
+(loader, required/optional, Modrinth slug and the `gradle.properties` key of the version); their required dependencies
+are installed automatically. The test fails if the server does not become healthy
 within 10 minutes, does not log "Done", writes a crash report, or logs exceptions, mixin errors or errors mentioning
-the mod id. Known harmless log lines can be excluded in `scripts/server-starttest.allowlist` (one regex per line).
+the mod id. Known harmless log lines can be excluded in `scripts/server-starttest.allowlist` (one regex per line, in addition to
+the built-in ones of the script).
 Logs and a summary are written to `.server-starttest/<loader>-<mode>/`. A Modrinth request that fails is an error,
 only a missing version of an optional mod is skipped. `--with-integrations` is skipped (exit 0) for loaders without
 optional mods (currently Forge and NeoForge), because it would equal the run without integrations.
@@ -93,8 +98,9 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 | Wooden shears do not stack (regression 1.18.2-1.2.1.1) | `item/does_not_stack` |
 | Listed in the creative tab "Tools & Utilities" | `item/is_in_tools_and_utilities_tab` |
 | Part of the common tag `c:tools/shear` (#17) | `item/is_in_common_shears_tag` |
-| Enchantable like vanilla shears: Efficiency, Unbreaking, Mending (regression 1.20.6-2.3.0.1) | `item/is_enchantable_like_vanilla_shears` |
+| Enchantable like vanilla shears with every enchantment (Efficiency, Unbreaking, Mending, Curse of Vanishing), only with an anvil, not at the enchanting table (regression 1.20.6-2.3.0.1) | `item/is_enchantable_like_vanilla_shears` |
 | Same mining speed and correct-tool behavior as vanilla shears for every block (cobweb, leaves, wool, ...) | `item/mines_like_vanilla_shears` |
+| Same durability loss as vanilla shears when breaking any block: 1 for blocks with hardness, nothing for blocks without hardness like fire (#40) | `item/loses_durability_per_block_like_vanilla_shears` |
 | Furnace fuel with the burn time of wooden tools (#39) | `item/is_fuel_like_wooden_tools`, `item/burns_in_furnace` |
 
 ### Durability config option (`durability`, default 50, range 0 - 10000, 0 deactivates the durability)
@@ -120,6 +126,9 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 | Recipe is unlocked when the player has planks | `recipe/unlocked_by_having_planks` |
 | Two damaged shears can be combined (remaining durability + 5%), result follows the config (#38) | `repair/combines_two_damaged_shears` |
 | Fully repaired shears are identical to new shears (#38) | `repair/fully_repaired_shears_equal_new_shears` |
+| Two damaged shears can be combined in a grindstone (remaining durability + 5%, enchantments removed) | `repair/grindstone_combines_two_damaged_shears` |
+| Shears combined in a grindstone do not store a fixed max damage, so config changes still apply (known issue [#51](https://github.com/cech12/WoodenShears/issues/51)) | `repair/grindstone_result_follows_config` |
+| Two damaged shears can be combined in an anvil (remaining durability + 12%, enchantments of both kept) | `repair/anvil_combines_two_damaged_shears` |
 | Unbreakable shears (durability 0) cannot be combined | `repair/not_possible_when_unbreakable` |
 
 ### Shearing entities (right-click)
@@ -134,7 +143,8 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 | Copper golem loses its flower (1.21.9-3.6.0.1) | `entity/shears_copper_golem` |
 | Sulfur cube ejects its swallowed item | `entity/shears_sulfur_cube` |
 | Equipment like a saddle can be cut off, with the same durability loss as vanilla shears | `entity/removes_saddle` |
-| Wolf armor can be removed by the owner, with the same durability loss as vanilla shears (fixed known issue 1.21-3.1.0.0) | `entity/removes_wolf_armor` |
+| Wolf armor can be removed by the owner, with the same durability loss as vanilla shears, and grants the advancement "Shear Brilliance" (fixed known issue 1.21-3.1.0.0) | `entity/removes_wolf_armor` |
+| Saddles, horse and nautilus armor, llama carpets and happy ghast harnesses are removed from every mob that can wear them, exactly like with vanilla shears (pig, strider, horses, donkey, mule, camels, llamas, happy ghast, nautiluses) | `entity/removes_equipment_like_vanilla_shears` |
 | Leash of an entity can be cut (1.21.9-3.6.0.1) | `entity/cuts_leash_of_entity` |
 | Leash knot on a fence can be removed (1.21.9-3.6.0.1) | `entity/cuts_leash_knot` |
 
@@ -146,7 +156,7 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 | Full beehives and bee nests can be harvested (fixed 1.17.1-1.1.0.1) | `block/harvests_full_beehives` |
 | Beehives and bee nests that are not full (honey level 0 - 4) are not harvested and the shears are not damaged | `block/does_not_harvest_beehives_without_honey` |
 | Cutting a tripwire disarms it (fixed 1.17.1-1.1.0.1) | `block/disarms_tripwire`, control test `block/tripwire_triggers_without_shears` |
-| Using shears on a plant tip (e.g. twisting vines) stops its growth | `block/stops_growth_of_plant_tips` |
+| Using shears on a plant tip stops its growth like vanilla shears, for every growing plant (twisting and weeping vines, cave vines, kelp, ...) | `block/stops_growth_of_plant_tips` |
 | For every block state of every registered block, the drops with wooden shears are the same as with vanilla shears (leaves, grass, vines, cobweb, tall grass, ...). This keeps all shears specific loot tables identical on all loaders. The test fails if well-known shears blocks are not detected as shears specific, and it logs the list of detected blocks (about 33 in 26.3) | `block/drops_like_vanilla_shears` |
 | Breaking leaves, cobweb, grass, fern, dead bush and glow lichen (#11) drops them and damages the shears | `block/breaking_drops_shearable_blocks` |
 
@@ -154,7 +164,7 @@ All test names are relative to `woodenshears:`. Every test runs on Fabric, Forge
 
 | Feature | Test(s) |
 |---|---|
-| Dispensers shear sheep, mooshrooms and snow golems | `dispenser/shears_sheep`, `dispenser/shears_mooshroom`, `dispenser/shears_snow_golem` |
+| Dispensers shear sheep, mooshrooms, snow golems, bogged, copper golems and sulfur cubes | `dispenser/shears_sheep`, `dispenser/shears_mooshroom`, `dispenser/shears_snow_golem`, `dispenser/shears_bogged`, `dispenser/shears_copper_golem`, `dispenser/shears_sulfur_cube` |
 | Dispensers harvest full beehives | `dispenser/harvests_full_beehive` |
 | Dispensers cut leashes | `dispenser/cuts_leash` |
 
@@ -187,7 +197,16 @@ This is not a bug: such data packs should use the predicate or the tag, which wo
 
 ### Known issues (marked with `KnownIssues`)
 
-Currently none.
+| Issue | Test | Loaders |
+|---|---|---|
+| [#51](https://github.com/cech12/WoodenShears/issues/51) Shears combined in a grindstone store a fixed max damage | `repair/grindstone_result_follows_config` | Fabric, Forge, NeoForge |
+
+### Checked against the Minecraft Wiki
+
+The feature list was checked against the [Minecraft Wiki page about shears](https://minecraft.wiki/w/Shears) (all
+uses and the complete version history up to 26.3). Vanilla behavior that does not depend on the kind of shears is not
+tested separately: pumpkin face direction, bees getting angry, sounds, loot of chests and villager trades of vanilla
+shears.
 
 ## Not tested automatically
 

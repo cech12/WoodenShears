@@ -17,8 +17,8 @@ The complete feature catalog and the matching tests are in [TESTING.md](TESTING.
   `<loader>/src/gametest/` is a thin adapter that registers the common tests. Never put test logic there.
 - `buildSrc/` - shared Gradle logic (`multiloader-common.gradle`, `multiloader-loader.gradle`, incl. the gametest
   source set wiring).
-- `scripts/` - server start test config: mods in `server-starttest.deps`, harmless log lines in
-  `server-starttest.allowlist`. The script itself is shared and lives in cech12/MinecraftModActions.
+- `scripts/` - harmless log lines of the server start test (`server-starttest.allowlist`). The script is shared and
+  lives in cech12/MinecraftModActions; it reads the dependencies from the mod metadata and uses the newest loader.
 - Integrations: Cloth Config (required) and ModMenu (optional) on Fabric only.
 
 ## Build and test
@@ -62,5 +62,5 @@ and game tests in one job, then the server start test, for every loader on every
   handle shears via their own tool actions/tags; some interactions there depended on loader PRs (copper golem, leash).
 - Data pack `match_tool` conditions that name `minecraft:shears` directly only accept wooden shears on Fabric. This is
   intended (Forge/NeoForge use their tool actions via `minecraft:tool/can_shear`), see "Data packs" in TESTING.md.
-- Cloth Config and ModMenu are often not yet available for a new Minecraft version. When they are temporarily
-  removed, adjust `scripts/server-starttest.deps` as well.
+- Cloth Config and ModMenu are often not yet available for a new Minecraft version. The server start test reads them
+  from `fabric.mod.json`: a missing optional mod is skipped, a missing required mod fails the test.

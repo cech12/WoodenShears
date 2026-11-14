@@ -39,15 +39,18 @@ curl -fsSL $S | bash -s -- forge
 curl -fsSL $S | bash -s -- neoforge
 ```
 
-All versions come from `gradle.properties`. Additional mods are listed in `scripts/server-starttest.deps`
-(loader, required/optional, Modrinth slug and the `gradle.properties` key of the version); their required dependencies
-are installed automatically. The test fails if the server does not log "Done"
-within 10 minutes, stops again right after the start, writes a crash report, logs exceptions, mixin errors or errors
-mentioning the mod id, or if the mod is not in the mod list of the loader. Known harmless log lines can be excluded in `scripts/server-starttest.allowlist` (one regex per line, in addition to
-the built-in ones of the script).
-Logs and a summary are written to `.server-starttest/<loader>-<mode>/`. A Modrinth request that fails is an error,
-only a missing version of an optional mod is skipped. `--with-integrations` is skipped (exit 0) for loaders without
-optional mods (currently Forge and NeoForge), because it would equal the run without integrations.
+The server runs with the Minecraft version of `gradle.properties`, but with the newest loader version and the newest
+versions of the dependencies, so that the test notices when a new loader or dependency release breaks the mod. The
+dependencies are read from the metadata of the jar (`fabric.mod.json`, `mods.toml`, `neoforge.mods.toml`): required
+dependencies are always installed, optional ones (on Fabric `recommends`/`suggests`, e.g. ModMenu) only with
+`--with-integrations`. Mod ids with another name on Modrinth are mapped centrally in `scripts/server-starttest-mods.txt`
+of MinecraftModActions. The test fails if the server does not log "Done" within 10 minutes, stops again right after
+the start, writes a crash report, logs exceptions, mixin errors or errors mentioning the mod id, or if the mod is not
+in the mod list of the loader. Known harmless log lines can be excluded in `scripts/server-starttest.allowlist` (one
+regex per line, in addition to the built-in ones of the script). Logs and a summary are written to
+`.server-starttest/<loader>-<mode>/`. `--with-integrations` is skipped (exit 0) for loaders without optional
+dependencies (currently Forge and NeoForge), because it would equal the run without integrations. To reproduce a
+failure with an older loader, set `STARTTEST_LOADER_VERSION`.
 
 ## How the GameTests are organized
 

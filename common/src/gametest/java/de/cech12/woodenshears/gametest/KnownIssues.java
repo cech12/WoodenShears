@@ -1,7 +1,6 @@
 package de.cech12.woodenshears.gametest;
 
 import de.cech12.woodenshears.Constants;
-import de.cech12.woodenshears.platform.Services;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 
@@ -14,13 +13,6 @@ import java.util.Set;
  */
 public final class KnownIssues {
 
-    /** platform name of Fabric (see IPlatformHelper#getPlatformName) */
-    public static final String FABRIC = "Fabric";
-    /** platform name of Forge */
-    public static final String FORGE = "Forge";
-    /** platform name of NeoForge */
-    public static final String NEOFORGE = "NeoForge";
-
     private KnownIssues() {}
 
     /**
@@ -28,11 +20,11 @@ public final class KnownIssues {
      *
      * @param helper game test helper
      * @param issue link or short description of the known issue
-     * @param affectedPlatforms platforms where the issue is known
+     * @param affectedPlatforms platforms where the issue is known (see {@link Platforms})
      * @param test test body with assertions
      */
     public static void run(GameTestHelper helper, String issue, Set<String> affectedPlatforms, Runnable test) {
-        String platform = Services.PLATFORM.getPlatformName();
+        String platform = Platforms.current();
         if (!affectedPlatforms.contains(platform)) {
             test.run();
             helper.succeed();

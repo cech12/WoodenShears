@@ -2,6 +2,7 @@ package de.cech12.woodenshears.gametest.tests;
 
 import de.cech12.woodenshears.Constants;
 import de.cech12.woodenshears.gametest.KnownIssues;
+import de.cech12.woodenshears.gametest.Platforms;
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
 import de.cech12.woodenshears.platform.services.IConfigHelper;
@@ -175,7 +176,7 @@ public final class RecipeTests {
      */
     public static void grindstoneResultFollowsConfig(GameTestHelper helper) {
         KnownIssues.run(helper, "https://github.com/cech12/WoodenShears/issues/51",
-                Set.of(KnownIssues.FABRIC, KnownIssues.FORGE, KnownIssues.NEOFORGE), () -> {
+                Set.of(Platforms.FABRIC, Platforms.FORGE, Platforms.NEOFORGE), () -> {
             ItemStack result = combineInGrindstone(helper);
             helper.assertTrue(result.is(TestUtils.woodenShearsItem()), "two damaged wooden shears cannot be combined in a grindstone: " + result);
             helper.assertTrue(result.getComponentsPatch().forget(type -> type != DataComponents.MAX_DAMAGE).isEmpty(),

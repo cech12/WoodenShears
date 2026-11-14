@@ -1,10 +1,9 @@
 package de.cech12.woodenshears.gametest.tests;
 
 import de.cech12.woodenshears.Constants;
-import de.cech12.woodenshears.gametest.KnownIssues;
+import de.cech12.woodenshears.gametest.Platforms;
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
-import de.cech12.woodenshears.platform.Services;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceKey;
@@ -34,7 +33,7 @@ public final class LootTests {
     public static void register(WoodenShearsGameTests.TestCollector tests) {
         tests.add("loot/can_shear_predicate_accepts_wooden_shears", LootTests::canShearPredicate);
         tests.add("loot/match_tool_with_shears_tag_accepts_wooden_shears", LootTests::matchToolWithShearsTag);
-        tests.add("loot/fabric_match_tool_with_vanilla_shears_accepts_wooden_shears", LootTests::fabricMatchToolWithVanillaShears);
+        tests.add("loot/match_tool_with_vanilla_shears_accepts_wooden_shears_only_on_fabric", LootTests::matchToolWithVanillaShears);
     }
 
     private static List<ItemStack> roll(GameTestHelper helper, String table, ItemStack tool) {
@@ -47,14 +46,23 @@ public final class LootTests {
                 .withParameter(LootContextParams.BLOCK_STATE, Blocks.STONE.defaultBlockState())
                 .withParameter(LootContextParams.TOOL, tool)
                 .create(LootContextParamSets.BLOCK);
-        return lootTable.getRandomItems(params, 0L);
+        return lootTable.getRandomItems(params, 1L); // fixed seed, 0 would use the random of the level
+    }
+
+    private static boolean dropsDiamond(List<ItemStack> drops) {
+        return drops.stream().anyMatch(s -> s.is(Items.DIAMOND));
+    }
+
+    /** Checks that the test loot table itself works: vanilla shears match, an empty hand does not. */
+    private static void assertTableWorks(GameTestHelper helper, String table) {
+        helper.assertTrue(dropsDiamond(roll(helper, table, new ItemStack(Items.SHEARS))),
+                "test loot table " + table + " is broken: vanilla shears do not match");
+        helper.assertTrue(roll(helper, table, ItemStack.EMPTY).isEmpty(), "test loot table " + table + " is broken: an empty hand matches");
     }
 
     private static void assertMatches(GameTestHelper helper, String table) {
-        helper.assertTrue(roll(helper, table, new ItemStack(Items.SHEARS)).stream().anyMatch(s -> s.is(Items.DIAMOND)),
-                "test loot table " + table + " is broken: vanilla shears do not match");
-        helper.assertTrue(roll(helper, table, ItemStack.EMPTY).isEmpty(), "test loot table " + table + " is broken: an empty hand matches");
-        helper.assertTrue(roll(helper, table, TestUtils.woodenShears()).stream().anyMatch(s -> s.is(Items.DIAMOND)),
+        assertTableWorks(helper, table);
+        helper.assertTrue(dropsDiamond(roll(helper, table, TestUtils.woodenShears())),
                 "wooden shears do not match the shears condition of loot table " + table);
     }
 
@@ -74,14 +82,20 @@ public final class LootTests {
     }
 
     /**
-     * Fabric only: "match_tool" conditions that name vanilla shears directly ("items": "minecraft:shears") also accept
-     * wooden shears, because Fabric has no shears tool action and the MatchToolMixin extends these conditions.
-     * Forge and NeoForge intentionally keep such explicit item checks as they are (data packs should use the predicate or
-     * the tag, see above), so this test does nothing there.
+     * Intended loader difference for "match_tool" conditions that name vanilla shears directly ("items": "minecraft:shears"):
+     * on Fabric they also accept wooden shears, because Fabric has no shears tool action and the MatchToolMixin extends
+     * these conditions. Forge and NeoForge intentionally keep such explicit item checks as they are (data packs should use
+     * the predicate or the tag, see above), so there wooden shears must NOT match. Any change of this behavior fails here.
      */
-    public static void fabricMatchToolWithVanillaShears(GameTestHelper helper) {
-        if (KnownIssues.FABRIC.equals(Services.PLATFORM.getPlatformName())) {
-            assertMatches(helper, "match_tool_vanilla_shears");
+    public static void matchToolWithVanillaShears(GameTestHelper helper) {
+        String table = "match_tool_vanilla_shears";
+        assertTableWorks(helper, table);
+        boolean matches = dropsDiamond(roll(helper, table, TestUtils.woodenShears()));
+        if (Platforms.isFabric()) {
+            helper.assertTrue(matches, "on Fabric wooden shears must match a match_tool condition that names minecraft:shears");
+        } else {
+            helper.assertTrue(!matches, "on " + Platforms.current() + " wooden shears must not match a match_tool condition that names "
+                    + "minecraft:shears (intended loader difference, see TESTING.md), but they do");
         }
         helper.succeed();
     }

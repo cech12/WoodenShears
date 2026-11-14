@@ -30,10 +30,12 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.stream.LongStream;
 
 /**
  * Using and breaking blocks with wooden shears does everything vanilla shears do.
@@ -188,20 +190,51 @@ public final class BlockTests {
     private static final BlockPos DOUBLE_PLANT_POS = TestUtils.CENTER;
 
     /**
-     * Blocks whose drops are known to depend on shears. They must be detected as shears specific, otherwise the
-     * comparison in {@link #dropsLikeVanillaShears} would silently check nothing.
+     * Fixed seeds for the loot rolls. Every block state is rolled with every seed, so the result is the same in every
+     * run and on every loader, and random hand drops (e.g. twisting vines drop themselves with 33% without shears)
+     * cannot hide the shears dependency of a block. Seed 0 is not allowed: vanilla then uses the random of the level.
      */
-    private static final List<Block> KNOWN_SHEARS_BLOCKS = List.of(
-            Blocks.OAK_LEAVES, Blocks.COBWEB, Blocks.SHORT_GRASS, Blocks.TALL_GRASS, Blocks.FERN, Blocks.LARGE_FERN,
-            Blocks.DEAD_BUSH, Blocks.VINE, Blocks.GLOW_LICHEN, Blocks.SEAGRASS, Blocks.TALL_SEAGRASS, Blocks.HANGING_ROOTS,
-            Blocks.NETHER_SPROUTS, Blocks.TWISTING_VINES, Blocks.WEEPING_VINES
+    private static final long[] LOOT_SEEDS = LongStream.rangeClosed(1, 16).toArray();
+
+    /**
+     * All vanilla blocks whose loot tables check for shears ("minecraft:tool/can_shear" in
+     * data/minecraft/loot_table/blocks of 26.3) and the item they drop with shears. Exactly these vanilla blocks must be
+     * detected as shears specific: a missing block means the comparison silently checks nothing, an additional block
+     * means that a new Minecraft version added one and this list must be updated.
+     */
+    private static final Map<String, String> VANILLA_SHEARS_DROPS = Map.ofEntries(
+            // leaves: the leaves themselves instead of random saplings, sticks and apples
+            Map.entry("acacia_leaves", "acacia_leaves"), Map.entry("azalea_leaves", "azalea_leaves"),
+            Map.entry("birch_leaves", "birch_leaves"), Map.entry("cherry_leaves", "cherry_leaves"),
+            Map.entry("dark_oak_leaves", "dark_oak_leaves"), Map.entry("flowering_azalea_leaves", "flowering_azalea_leaves"),
+            Map.entry("jungle_leaves", "jungle_leaves"), Map.entry("mangrove_leaves", "mangrove_leaves"),
+            Map.entry("oak_leaves", "oak_leaves"), Map.entry("orange_poplar_leaves", "orange_poplar_leaves"),
+            Map.entry("pale_oak_leaves", "pale_oak_leaves"), Map.entry("red_poplar_leaves", "red_poplar_leaves"),
+            Map.entry("spruce_leaves", "spruce_leaves"), Map.entry("yellow_poplar_leaves", "yellow_poplar_leaves"),
+            // grass and plants: the plant instead of nothing or random seeds / sticks
+            Map.entry("short_grass", "short_grass"), Map.entry("tall_grass", "short_grass"),
+            Map.entry("fern", "fern"), Map.entry("large_fern", "fern"),
+            Map.entry("short_dry_grass", "short_dry_grass"), Map.entry("tall_dry_grass", "tall_dry_grass"),
+            Map.entry("bush", "bush"), Map.entry("dead_bush", "dead_bush"),
+            Map.entry("seagrass", "seagrass"), Map.entry("tall_seagrass", "seagrass"),
+            Map.entry("nether_sprouts", "nether_sprouts"), Map.entry("hanging_roots", "hanging_roots"),
+            Map.entry("pale_hanging_moss", "pale_hanging_moss"), Map.entry("small_dripleaf", "small_dripleaf"),
+            Map.entry("glow_lichen", "glow_lichen"), Map.entry("vine", "vine"), Map.entry("cobweb", "cobweb"),
+            // vines: always the vines instead of a random 33% chance
+            Map.entry("twisting_vines", "twisting_vines"), Map.entry("twisting_vines_plant", "twisting_vines"),
+            Map.entry("weeping_vines", "weeping_vines"), Map.entry("weeping_vines_plant", "weeping_vines")
     );
 
     /**
      * For every block state of every registered block (also blocks of other loaded mods), the loot table produces the
-     * same drops with wooden shears as with vanilla shears (leaves, grass, vines, cobwebs, ... drop themselves, tall
-     * grass drops grass, ...). This is what keeps shears specific drops identical on all loaders: Fabric extends the
-     * vanilla shears conditions (MatchToolMixin), Forge/NeoForge use their shears tool action.
+     * same drops with wooden shears as with vanilla shears, with every seed of {@link #LOOT_SEEDS}. This is what keeps
+     * shears specific drops identical on all loaders: Fabric extends the vanilla shears conditions (MatchToolMixin),
+     * Forge/NeoForge use their shears tool action.
+     * <p>
+     * A block is shears specific if vanilla shears and an empty hand drop something different with at least one seed.
+     * The shears specific vanilla blocks must be exactly {@link #VANILLA_SHEARS_DROPS}. For these blocks the drops with
+     * shears must not depend on the seed (so the equality with vanilla shears is no lucky roll) and must be the listed
+     * item.
      */
     public static void dropsLikeVanillaShears(GameTestHelper helper) {
         var level = helper.getLevel();
@@ -211,7 +244,9 @@ public final class BlockTests {
         Vec3 origin = helper.absoluteVec(Vec3.atCenterOf(TestUtils.CENTER));
         List<String> differences = new ArrayList<>();
         List<String> errors = new ArrayList<>();
-        Set<Block> shearsSpecificBlocks = new HashSet<>();
+        List<String> randomShearsDrops = new ArrayList<>();
+        Set<String> shearsSpecificBlocks = new TreeSet<>();
+        Map<String, Set<String>> shearsDrops = new TreeMap<>();
         for (Block block : BuiltInRegistries.BLOCK) {
             var key = block.getLootTable();
             if (key.isEmpty()) {
@@ -219,8 +254,8 @@ public final class BlockTests {
             }
             LootTable table = lootTables.getLootTable(key.get());
             Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
+            boolean knownShearsBlock = blockId.getNamespace().equals(Identifier.DEFAULT_NAMESPACE) && VANILLA_SHEARS_DROPS.containsKey(blockId.getPath());
             for (BlockState state : block.getStateDefinition().getPossibleStates()) {
-                long seed = (long) blockId.hashCode() * 31 + state.hashCode();
                 Vec3 lootOrigin = origin;
                 boolean doublePlant = state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF);
                 if (doublePlant) {
@@ -232,14 +267,27 @@ public final class BlockTests {
                     lootOrigin = helper.absoluteVec(Vec3.atCenterOf(lootPos));
                 }
                 try {
-                    List<ItemStack> woodenDrops = table.getRandomItems(params(level, lootOrigin, state, wooden), seed);
-                    List<ItemStack> vanillaDrops = table.getRandomItems(params(level, lootOrigin, state, vanilla), seed);
-                    List<ItemStack> handDrops = table.getRandomItems(params(level, lootOrigin, state, ItemStack.EMPTY), seed);
-                    if (!sameStacks(woodenDrops, vanillaDrops)) {
-                        differences.add(state + " (wooden: " + woodenDrops + ", vanilla: " + vanillaDrops + ")");
-                    }
-                    if (!sameStacks(vanillaDrops, handDrops)) {
-                        shearsSpecificBlocks.add(block);
+                    List<ItemStack> firstVanillaDrops = null;
+                    for (long seed : LOOT_SEEDS) {
+                        List<ItemStack> woodenDrops = table.getRandomItems(params(level, lootOrigin, state, wooden), seed);
+                        List<ItemStack> vanillaDrops = table.getRandomItems(params(level, lootOrigin, state, vanilla), seed);
+                        List<ItemStack> handDrops = table.getRandomItems(params(level, lootOrigin, state, ItemStack.EMPTY), seed);
+                        if (!sameStacks(woodenDrops, vanillaDrops)) {
+                            differences.add(state + " with seed " + seed + " (wooden: " + woodenDrops + ", vanilla: " + vanillaDrops + ")");
+                            break;
+                        }
+                        if (!sameStacks(vanillaDrops, handDrops)) {
+                            shearsSpecificBlocks.add(blockId.toString());
+                        }
+                        if (knownShearsBlock) {
+                            if (firstVanillaDrops == null) {
+                                firstVanillaDrops = vanillaDrops;
+                            } else if (!sameStacks(firstVanillaDrops, vanillaDrops)) {
+                                randomShearsDrops.add(state + " (seed " + LOOT_SEEDS[0] + ": " + firstVanillaDrops + ", seed " + seed + ": " + vanillaDrops + ")");
+                            }
+                            vanillaDrops.stream().filter(drop -> !drop.isEmpty()).forEach(drop -> shearsDrops.computeIfAbsent(blockId.getPath(), id -> new TreeSet<>())
+                                    .add(BuiltInRegistries.ITEM.getKey(drop.getItem()).getPath()));
+                        }
                     }
                 } catch (RuntimeException e) {
                     errors.add(state + ": " + e);
@@ -251,14 +299,23 @@ public final class BlockTests {
                 }
             }
         }
-        List<String> undetected = KNOWN_SHEARS_BLOCKS.stream().filter(block -> !shearsSpecificBlocks.contains(block))
-                .map(block -> BuiltInRegistries.BLOCK.getKey(block).toString()).toList();
-        helper.assertTrue(undetected.isEmpty(), "test is broken: drops of " + undetected + " do not depend on shears");
         helper.assertTrue(errors.isEmpty(), "loot tables could not be evaluated: " + errors.stream().limit(10).toList());
         helper.assertTrue(differences.isEmpty(), differences.size() + " block states drop differently than with vanilla shears: "
                 + differences.stream().limit(10).toList());
-        Constants.LOG.info("Compared drops of {} shears specific blocks with vanilla shears: {}", shearsSpecificBlocks.size(),
-                shearsSpecificBlocks.stream().map(block -> BuiltInRegistries.BLOCK.getKey(block).toString()).sorted().toList());
+        Set<String> expectedBlocks = new TreeSet<>();
+        VANILLA_SHEARS_DROPS.keySet().forEach(path -> expectedBlocks.add(Identifier.withDefaultNamespace(path).toString()));
+        List<String> undetected = expectedBlocks.stream().filter(id -> !shearsSpecificBlocks.contains(id)).toList();
+        helper.assertTrue(undetected.isEmpty(), "test is broken: drops of " + undetected + " do not depend on shears");
+        List<String> unknown = shearsSpecificBlocks.stream()
+                .filter(id -> id.startsWith(Identifier.DEFAULT_NAMESPACE + ":") && !expectedBlocks.contains(id)).toList();
+        helper.assertTrue(unknown.isEmpty(), "vanilla blocks with unknown shears specific drops, add them to VANILLA_SHEARS_DROPS: " + unknown);
+        helper.assertTrue(randomShearsDrops.isEmpty(), "drops with shears depend on the seed: " + randomShearsDrops.stream().limit(10).toList());
+        List<String> wrongDrops = VANILLA_SHEARS_DROPS.entrySet().stream()
+                .filter(entry -> !Set.of(entry.getValue()).equals(shearsDrops.get(entry.getKey())))
+                .map(entry -> entry.getKey() + " drops " + shearsDrops.get(entry.getKey()) + " instead of " + entry.getValue()).sorted().toList();
+        helper.assertTrue(wrongDrops.isEmpty(), "unexpected drops with shears: " + wrongDrops);
+        Constants.LOG.info("Compared drops of {} shears specific blocks with vanilla shears ({} seeds per block state): {}",
+                shearsSpecificBlocks.size(), LOOT_SEEDS.length, shearsSpecificBlocks);
         helper.succeed();
     }
 

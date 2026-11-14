@@ -1,8 +1,10 @@
 # Testing
 
-Wooden Shears has two automated test levels. Both run in CI on every push and pull request for every loader
-(Fabric, Forge, NeoForge) and turn the build red on failure. Pushes and pull requests that only change Markdown files
-(`**/*.md`) do not start the CI.
+Wooden Shears has two automated test levels. Both run in CI for every loader (Fabric, Forge, NeoForge) on every pull
+request and on pushes to version branches and release tags, and turn the build red on failure. Pushes to branches
+with a `/` in their name (e.g. `feature/...`) do not start the CI themselves (the branch filter `*` does not match
+`/`), only their pull request does. Pushes and pull requests that only change Markdown files (`**/*.md`) do not start
+the CI.
 
 | Level | What it checks | Where it runs |
 |---|---|---|
@@ -92,7 +94,7 @@ test mod (`woodenshears_gametest`), on NeoForge it is part of the main mod. It i
    in its `register` method: `tests.add("group/my_test", Class::myTest);`. Call `helper.succeed()` (or use
    `helper.succeedWhen(...)` for tests that need ticks).
 2. Add `common/src/gametest/resources/data/woodenshears/test_instance/group/my_test.json` (copy an existing one).
-   The meta test `meta/every_test_function_has_an_instance` fails if you forget it.
+   The meta test `meta/every_test_function_has_an_instance` fails if you forget it or if its `function` names another test.
 3. Tests that need another durability config value use another `environment` (`test_environment/*.json`).
    Tests of one environment run together, different environments never run at the same time.
 4. Run `./gradlew runGameTestServer` and make sure the test fails if the feature is broken.
@@ -124,6 +126,11 @@ loader differences check the expected behavior of each loader (see "Data packs")
 | Furnace fuel with the burn time of wooden tools (#39) | `item/is_fuel_like_wooden_tools`, `item/burns_in_furnace` |
 
 ### Durability config option (`durability`, default 50, range 0 - 10000, 0 deactivates the durability)
+
+The test environment `default` (`test_environment/default.json`) sets the durability to 50, so tests do not depend on
+a local config file. If the default ever changes, `durability/default_value` fails, and `default.json` and
+`DOCUMENTED_DEFAULT` in `DurabilityTests` must be updated together with it. All other tests read the value from the
+config (`Services.CONFIG.getDurability()`).
 
 | Feature | Test(s) |
 |---|---|
@@ -175,7 +182,7 @@ config file. On Forge, setting the value also saves the server config file in `f
 | Wolf armor can be removed by the owner, with the same durability loss as vanilla shears, and grants the advancement "Shear Brilliance" (fixed known issue 1.21-3.1.0.0) | `entity/removes_wolf_armor` |
 | Saddles, horse and nautilus armor, llama carpets and happy ghast harnesses are removed from every mob that can wear them, exactly like with vanilla shears (pig, strider, horses, donkey, mule, camels, llamas, happy ghast, nautiluses) | `entity/removes_equipment_like_vanilla_shears` |
 | Leash of an entity can be cut (1.21.9-3.6.0.1) | `entity/cuts_leash_of_entity` |
-| Leash knot on a fence can be removed (1.21.9-3.6.0.1) | `entity/cuts_leash_knot` |
+| Leash knot on a fence can be removed and the shears lose one durability (1.21.9-3.6.0.1) | `entity/cuts_leash_knot` |
 
 ### Blocks
 
@@ -222,7 +229,7 @@ expected result on each loader, so a change of this behavior is noticed.
 |---|---|
 | Item name translated in all shipped languages (all files in `assets/woodenshears/lang/`, found automatically), English "Wooden Shears" | `resources/item_name_is_translated` |
 | Item model definition, model and texture exist and reference each other | `resources/item_model_and_texture_exist` |
-| Every test function has a test instance | `meta/every_test_function_has_an_instance` |
+| Every test function has a test instance that runs exactly this function | `meta/every_test_function_has_an_instance` |
 | The release jar starts on a dedicated server, with and without integrations (Cloth Config and ModMenu on Fabric) | server start test |
 
 ### Known issues (marked with `KnownIssues`)

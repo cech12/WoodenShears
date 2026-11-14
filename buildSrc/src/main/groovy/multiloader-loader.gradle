@@ -69,6 +69,13 @@ configurations {
 dependencies {
     commonGametestJava project(path: ':common', configuration: 'commonGametestJava')
     commonGametestResources project(path: ':common', configuration: 'commonGametestResources')
+    // The common game tests compiled on their own (common:compileGametestJava). Two purposes:
+    // - IDE: the common sources are only added to the compileGametestJava task below, which IntelliJ does not see. With
+    //   the compiled classes on the compile classpath, IntelliJ resolves them in <loader>/src/gametest (like
+    //   compileOnly(project(':common')) for the main source set).
+    // - Build: the common game tests must compile against vanilla alone, which enforces "vanilla API only" (no access
+    //   to fields that only a loader widens). The loader still compiles the common sources itself (javac prefers them).
+    gametestCompileOnly project(path: ':common', configuration: 'commonGametestClasses')
 }
 
 tasks.named('compileGametestJava', JavaCompile) {

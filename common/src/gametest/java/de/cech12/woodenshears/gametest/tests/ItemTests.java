@@ -8,6 +8,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -68,7 +69,9 @@ public final class ItemTests {
     public static void isInToolsAndUtilitiesTab(GameTestHelper helper) {
         var level = helper.getLevel();
         CreativeModeTabs.tryRebuildTabContents(level.enabledFeatures(), true, level.registryAccess());
-        var tab = BuiltInRegistries.CREATIVE_MODE_TAB.getValueOrThrow(CreativeModeTabs.TOOLS_AND_UTILITIES);
+        // own key: CreativeModeTabs.TOOLS_AND_UTILITIES is private in vanilla (only the loaders widen it)
+        var tab = BuiltInRegistries.CREATIVE_MODE_TAB.getValueOrThrow(
+                ResourceKey.create(Registries.CREATIVE_MODE_TAB, Identifier.withDefaultNamespace("tools_and_utilities")));
         boolean contained = tab.getDisplayItems().stream().anyMatch(stack -> stack.is(TestUtils.woodenShearsItem()));
         helper.assertTrue(contained, "wooden shears are missing in the tools and utilities creative tab");
         helper.succeed();

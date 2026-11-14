@@ -356,6 +356,7 @@ public final class EntityTests {
         assertConsumed(helper, TestUtils.interact(player, knot), "leash knot");
         helper.assertTrue(!pig.isLeashed(), "leash was not cut");
         helper.assertTrue(knot.isRemoved(), "leash knot was not removed");
+        TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after cutting a leash knot");
         helper.succeed();
     }
 

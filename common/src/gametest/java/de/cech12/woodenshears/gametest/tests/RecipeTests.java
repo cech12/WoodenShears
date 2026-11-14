@@ -5,7 +5,7 @@ import de.cech12.woodenshears.gametest.KnownIssues;
 import de.cech12.woodenshears.gametest.Platforms;
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
-import de.cech12.woodenshears.platform.services.IConfigHelper;
+import de.cech12.woodenshears.platform.Services;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -129,7 +129,7 @@ public final class RecipeTests {
      * both plus a 5% bonus. The max damage is not stored in the result, so it still follows the config.
      */
     public static void combinesTwoDamagedShears(GameTestHelper helper) {
-        int max = IConfigHelper.DURABILITY_DEFAULT;
+        int max = Services.CONFIG.getDurability(); // set by the test environment "default"
         ItemStack first = TestUtils.woodenShears();
         first.setDamageValue(40);
         ItemStack second = TestUtils.woodenShears();
@@ -161,7 +161,7 @@ public final class RecipeTests {
      * plus a 5% bonus, enchantments (except curses) are removed.
      */
     public static void grindstoneCombinesTwoDamagedShears(GameTestHelper helper) {
-        int max = IConfigHelper.DURABILITY_DEFAULT;
+        int max = Services.CONFIG.getDurability(); // set by the test environment "default"
         ItemStack result = combineInGrindstone(helper);
         helper.assertTrue(result.is(TestUtils.woodenShearsItem()), "two damaged wooden shears cannot be combined in a grindstone: " + result);
         int remaining = (max - 40) + (max - 30) + max * 5 / 100;
@@ -201,7 +201,7 @@ public final class RecipeTests {
      * a 12% bonus, the enchantments of both are kept. The max damage still follows the config.
      */
     public static void anvilCombinesTwoDamagedShears(GameTestHelper helper) {
-        int max = IConfigHelper.DURABILITY_DEFAULT;
+        int max = Services.CONFIG.getDurability(); // set by the test environment "default"
         ItemStack first = TestUtils.woodenShears();
         first.setDamageValue(40);
         first.enchant(enchantment(helper, Enchantments.EFFICIENCY), 1);

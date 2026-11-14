@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -34,6 +35,7 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Right-clicking entities with wooden shears does everything vanilla shears do.
@@ -50,6 +52,7 @@ public final class EntityTests {
         tests.add("entity/shears_bogged", EntityTests::shearsBogged);
         tests.add("entity/shears_copper_golem", EntityTests::shearsCopperGolem);
         tests.add("entity/shears_sulfur_cube", EntityTests::shearsSulfurCube);
+        tests.add("entity/does_not_shear_when_not_ready", EntityTests::doesNotShearWhenNotReady);
         tests.add("entity/removes_saddle", EntityTests::removesSaddle);
         tests.add("entity/removes_wolf_armor", EntityTests::removesWolfArmor);
         tests.add("entity/removes_equipment_like_vanilla_shears", EntityTests::removesEquipmentLikeVanillaShears);
@@ -116,12 +119,13 @@ public final class EntityTests {
         helper.succeed();
     }
 
-    /** Shearing a bogged drops mushrooms and marks it as sheared (Forge known issue fixed in 1.21-3.1.0.0). */
+    /** Shearing a bogged drops two mushrooms and marks it as sheared (Forge known issue fixed in 1.21-3.1.0.0). */
     public static void shearsBogged(GameTestHelper helper) {
         Bogged bogged = helper.spawn(EntityTypes.BOGGED, TestUtils.CENTER);
         ServerPlayer player = survivalPlayer(helper);
         assertConsumed(helper, TestUtils.interact(player, bogged), "bogged");
         helper.assertTrue(bogged.isSheared(), "bogged was not sheared");
+        TestUtils.assertBoggedMushroomsDropped(helper);
         TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after shearing a bogged");
         helper.succeed();
     }
@@ -151,6 +155,54 @@ public final class EntityTests {
         helper.assertItemEntityPresent(swallowable);
         TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after shearing a sulfur cube");
         helper.succeed();
+    }
+
+    /** Mob that is not ready for shearing, with the setup that makes it so. */
+    private record NotReady(String name, EntityType<? extends Mob> type, Consumer<Mob> setup) {}
+
+    /** Result of using shears on a mob: interaction consumed, durability loss and dropped items. */
+    private record UseResult(boolean consumed, int damage, List<String> drops) {}
+
+    /**
+     * Using shears on mobs that cannot be sheared (already sheared, baby, nothing to remove) does nothing, exactly like
+     * vanilla shears: no drops, no durability loss. Catches Fabric mixins that replace an is(Items.SHEARS) check but
+     * skip the readiness check of vanilla.
+     */
+    public static void doesNotShearWhenNotReady(GameTestHelper helper) {
+        List<NotReady> cases = List.of(
+                new NotReady("sheared sheep", EntityTypes.SHEEP, mob -> ((Sheep) mob).setSheared(true)),
+                new NotReady("baby sheep", EntityTypes.SHEEP, mob -> ((AgeableMob) mob).setBaby(true)),
+                new NotReady("baby mooshroom", EntityTypes.MOOSHROOM, mob -> ((AgeableMob) mob).setBaby(true)),
+                new NotReady("snow golem without pumpkin", EntityTypes.SNOW_GOLEM, mob -> ((SnowGolem) mob).setPumpkin(false)),
+                new NotReady("sheared bogged", EntityTypes.BOGGED, mob -> ((Bogged) mob).setSheared(true)),
+                new NotReady("copper golem without flower", EntityTypes.COPPER_GOLEM, mob -> mob.setItemSlot(CopperGolem.EQUIPMENT_SLOT_ANTENNA, ItemStack.EMPTY)),
+                new NotReady("empty sulfur cube", EntityTypes.SULFUR_CUBE, mob -> mob.setItemSlot(EquipmentSlot.BODY, ItemStack.EMPTY)),
+                new NotReady("pig without saddle", EntityTypes.PIG, mob -> mob.setItemSlot(EquipmentSlot.SADDLE, ItemStack.EMPTY)));
+        List<String> problems = new ArrayList<>();
+        for (NotReady notReady : cases) {
+            UseResult vanilla = useShears(helper, notReady, new ItemStack(Items.SHEARS));
+            UseResult wooden = useShears(helper, notReady, TestUtils.woodenShears());
+            if (vanilla.damage() != 0 || !vanilla.drops().isEmpty()) {
+                problems.add(notReady.name() + ": test setup broken, vanilla shears shear it (" + vanilla + ")");
+            } else if (!wooden.equals(vanilla)) {
+                problems.add(notReady.name() + ": " + wooden + " instead of " + vanilla);
+            }
+        }
+        helper.assertTrue(problems.isEmpty(), "using wooden shears on mobs that are not ready for shearing differs from vanilla shears: " + problems);
+        helper.succeed();
+    }
+
+    /** Spawns the mob, uses the shears on it, and removes the mob and all dropped items afterward. */
+    private static UseResult useShears(GameTestHelper helper, NotReady notReady, ItemStack shears) {
+        Mob mob = helper.spawnWithNoFreeWill(notReady.type(), TestUtils.CENTER);
+        notReady.setup().accept(mob);
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, shears);
+        boolean consumed = TestUtils.interact(player, mob).consumesAction();
+        List<ItemEntity> drops = helper.getLevel().getEntitiesOfClass(ItemEntity.class, helper.getBounds());
+        List<String> dropNames = drops.stream().map(drop -> drop.getItem().toString()).sorted().toList();
+        drops.forEach(ItemEntity::discard);
+        mob.discard();
+        return new UseResult(consumed, player.getMainHandItem().getDamageValue(), dropNames);
     }
 
     // Positions of the wooden and the vanilla shears run of the equipment tests. They are 4 blocks apart and the drop is

@@ -52,6 +52,15 @@ public final class ForgeGameTestAdapter implements IGameTestPlatform {
         }
     }
 
+    @Override
+    public int defaultDurability() {
+        try {
+            return ((ForgeConfigSpec.IntValue) staticField("DURABILITY")).getDefault();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Cannot read durability config", e);
+        }
+    }
+
     private static Object staticField(String name) throws ReflectiveOperationException {
         Field field = ForgeConfigHelper.class.getDeclaredField(name);
         field.setAccessible(true);

@@ -89,6 +89,7 @@ public final class DispenserTests {
         DispenserBlockEntity dispenser = dispense(helper);
         helper.succeedWhen(() -> {
             helper.assertTrue(bogged.isSheared(), "bogged was not sheared by the dispenser");
+            TestUtils.assertBoggedMushroomsDropped(helper);
             TestUtils.assertDamage(helper, dispenser.getItem(0), 1, "in dispenser after shearing a bogged");
         });
     }

@@ -31,6 +31,9 @@ public final class DurabilityTests {
         tests.add("durability/config_change_applies_to_existing_shears", DurabilityTests::configChangeAppliesToExistingShears);
     }
 
+    /** Default durability as documented (README, TESTING.md, config description). */
+    private static final int DOCUMENTED_DEFAULT = 50;
+
     private static void assertMaxDamage(GameTestHelper helper, ItemStack stack, int expected) {
         helper.assertTrue(stack.isDamageableItem(), "wooden shears are not damageable");
         helper.assertValueEqual(stack.getMaxDamage(), expected, "max damage of wooden shears");
@@ -43,8 +46,11 @@ public final class DurabilityTests {
 
     /** Environment "default": durability 50 (default config value). */
     public static void defaultValue(GameTestHelper helper) {
-        helper.assertValueEqual(Services.CONFIG.getDurability(), IConfigHelper.DURABILITY_DEFAULT, "configured durability");
-        assertMaxDamage(helper, TestUtils.woodenShears(), IConfigHelper.DURABILITY_DEFAULT);
+        // the documented default is 50; it is read from the config definition of the loader, not from the environment
+        helper.assertValueEqual(IConfigHelper.DURABILITY_DEFAULT, DOCUMENTED_DEFAULT, "default durability constant");
+        helper.assertValueEqual(GameTestPlatform.INSTANCE.defaultDurability(), DOCUMENTED_DEFAULT, "default durability of the config definition");
+        helper.assertValueEqual(Services.CONFIG.getDurability(), DOCUMENTED_DEFAULT, "configured durability");
+        assertMaxDamage(helper, TestUtils.woodenShears(), DOCUMENTED_DEFAULT);
         helper.succeed();
     }
 
@@ -85,10 +91,12 @@ public final class DurabilityTests {
     /** Environment "default": shears break after 50 uses. */
     public static void shearsBreakWhenUsedUp(GameTestHelper helper) {
         ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, TestUtils.woodenShears());
-        player.getMainHandItem().hurtAndBreak(IConfigHelper.DURABILITY_DEFAULT - 1, player, EquipmentSlot.MAINHAND);
+        int uses = GameTestPlatform.INSTANCE.defaultDurability();
+        helper.assertValueEqual(uses, DOCUMENTED_DEFAULT, "default durability of the config definition");
+        player.getMainHandItem().hurtAndBreak(uses - 1, player, EquipmentSlot.MAINHAND);
         helper.assertTrue(!player.getMainHandItem().isEmpty(), "wooden shears broke too early");
         player.getMainHandItem().hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-        helper.assertTrue(player.getMainHandItem().isEmpty(), "wooden shears did not break after " + IConfigHelper.DURABILITY_DEFAULT + " uses");
+        helper.assertTrue(player.getMainHandItem().isEmpty(), "wooden shears did not break after " + uses + " uses");
         helper.succeed();
     }
 

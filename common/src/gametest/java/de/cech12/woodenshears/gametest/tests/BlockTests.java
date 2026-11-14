@@ -72,10 +72,13 @@ public final class BlockTests {
         helper.succeed();
     }
 
-    /** Fixed 1.17.1-1.1.0.1: using shears on a full beehive or bee nest drops honeycombs and empties it. */
+    /**
+     * Fixed 1.17.1-1.1.0.1: using shears on a full beehive or bee nest drops honeycombs and empties it. Hive and nest are
+     * 4 blocks apart and the drops are searched within 1.5 blocks, so a check never finds the honeycombs of the other.
+     */
     public static void harvestsFullBeehives(GameTestHelper helper) {
-        BlockPos hive = TestUtils.CENTER.west();
-        BlockPos nest = TestUtils.CENTER.east();
+        BlockPos hive = TestUtils.CENTER.west(2);
+        BlockPos nest = TestUtils.CENTER.east(2);
         helper.setBlock(hive, Blocks.BEEHIVE.defaultBlockState().setValue(BeehiveBlock.HONEY_LEVEL, BeehiveBlock.MAX_HONEY_LEVELS));
         helper.setBlock(nest, Blocks.BEE_NEST.defaultBlockState().setValue(BeehiveBlock.HONEY_LEVEL, BeehiveBlock.MAX_HONEY_LEVELS));
         ServerPlayer player = survivalPlayer(helper);
@@ -83,8 +86,8 @@ public final class BlockTests {
         helper.useBlock(nest, player);
         helper.assertBlockProperty(hive, BeehiveBlock.HONEY_LEVEL, 0);
         helper.assertBlockProperty(nest, BeehiveBlock.HONEY_LEVEL, 0);
-        helper.assertItemEntityPresent(Items.HONEYCOMB, hive, 2);
-        helper.assertItemEntityPresent(Items.HONEYCOMB, nest, 2);
+        helper.assertItemEntityPresent(Items.HONEYCOMB, hive, 1.5);
+        helper.assertItemEntityPresent(Items.HONEYCOMB, nest, 1.5);
         TestUtils.assertDamage(helper, player.getMainHandItem(), 2, "after harvesting two beehives");
         helper.succeed();
     }

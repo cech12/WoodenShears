@@ -16,7 +16,9 @@ public final class KnownIssues {
     private KnownIssues() {}
 
     /**
-     * Runs a synchronous test body and succeeds the test.
+     * Runs a synchronous test body and succeeds the test. On the affected platforms every failed assertion of the body
+     * counts as "issue still present", so the body should only contain the assertion of the issue itself. Setup and
+     * plausibility checks belong before this call.
      *
      * @param helper game test helper
      * @param issue link or short description of the known issue

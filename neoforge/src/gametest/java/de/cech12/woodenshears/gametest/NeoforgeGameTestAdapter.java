@@ -26,9 +26,7 @@ public final class NeoforgeGameTestAdapter implements IGameTestPlatform {
     @SuppressWarnings("unchecked")
     public int setDurability(int durability) {
         try {
-            Field field = NeoforgeConfigHelper.class.getDeclaredField("DURABILITY");
-            field.setAccessible(true);
-            ModConfigSpec.IntValue value = (ModConfigSpec.IntValue) field.get(null);
+            ModConfigSpec.IntValue value = durabilityValue();
             int previous = value.get();
             // like loading a config file: NeoForge corrects values outside the range (the mod itself does not clamp here)
             value.set((Integer) value.getSpec().correct(durability));
@@ -36,6 +34,21 @@ public final class NeoforgeGameTestAdapter implements IGameTestPlatform {
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("Cannot change durability config", e);
         }
+    }
+
+    @Override
+    public int defaultDurability() {
+        try {
+            return durabilityValue().getDefault();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Cannot read durability config", e);
+        }
+    }
+
+    private static ModConfigSpec.IntValue durabilityValue() throws ReflectiveOperationException {
+        Field field = NeoforgeConfigHelper.class.getDeclaredField("DURABILITY");
+        field.setAccessible(true);
+        return (ModConfigSpec.IntValue) field.get(null);
     }
 
 }

@@ -101,6 +101,9 @@ test mod (`woodenshears_gametest`), on NeoForge it is part of the main mod. It i
 If a test reveals a bug that cannot be fixed in the same change, wrap the assertions in
 `KnownIssues.run(helper, "<issue link>", Set.of(Platforms.FORGE), () -> ...)` and open an issue. On the listed
 loaders the test passes while the bug exists and fails as soon as it is fixed, so the marker is not forgotten.
+Every failed assertion inside the lambda counts as "the bug is still there", so only put the assertion of the bug
+itself into the lambda. Setup and plausibility checks (e.g. "the result is wooden shears at all") belong before
+`KnownIssues.run`, otherwise a completely broken feature would still pass with a warning.
 
 ## Features and tests
 
@@ -124,13 +127,13 @@ loader differences check the expected behavior of each loader (see "Data packs")
 
 | Feature | Test(s) |
 |---|---|
-| Default 50 | `durability/default_value` |
+| Default 50, read from the config definition of the loader (config spec on Forge/NeoForge, config class on Fabric), not only from the test environment | `durability/default_value` |
 | Custom value (200) | `durability/custom_value` |
 | Maximum value 10000 | `durability/maximum_value` |
 | Values above 10000 are limited to 10000 | `durability/above_maximum_is_limited` |
 | 0 makes the shears unbreakable (not damageable, no max damage) | `durability/zero_makes_shears_unbreakable` |
 | Values below 0 behave like 0 | `durability/below_zero_makes_shears_unbreakable` |
-| Shears break after 50 uses | `durability/shears_break_when_used_up` |
+| Shears break after 50 uses (the default of the config definition) | `durability/shears_break_when_used_up` |
 | Config changes apply to already existing shears | `durability/config_change_applies_to_existing_shears` |
 
 The limits of `above_maximum_is_limited` and `below_zero_makes_shears_unbreakable` are implemented differently per
@@ -164,9 +167,10 @@ config file. On Forge, setting the value also saves the server config file in `f
 | Creative mode (sheep, mooshroom, snow golem) works and does not damage the shears | `entity/shears_in_creative_without_damage` |
 | Mooshroom turns into a cow and drops mushrooms | `entity/shears_mooshroom` |
 | Snow golem loses its pumpkin | `entity/shears_snow_golem` |
-| Bogged can be sheared (fixed known issue 1.21-3.1.0.0) | `entity/shears_bogged` |
+| Bogged can be sheared and drops two mushrooms (fixed known issue 1.21-3.1.0.0) | `entity/shears_bogged` |
 | Copper golem loses its flower (1.21.9-3.6.0.1) | `entity/shears_copper_golem` |
 | Sulfur cube ejects its swallowed item | `entity/shears_sulfur_cube` |
+| Mobs that are not ready for shearing (sheared sheep and bogged, baby sheep and mooshroom, snow golem without pumpkin, copper golem without flower, empty sulfur cube, pig without saddle) behave like with vanilla shears: no drops, no durability loss | `entity/does_not_shear_when_not_ready` |
 | Equipment like a saddle can be cut off, with the same durability loss as vanilla shears | `entity/removes_saddle` |
 | Wolf armor can be removed by the owner, with the same durability loss as vanilla shears, and grants the advancement "Shear Brilliance" (fixed known issue 1.21-3.1.0.0) | `entity/removes_wolf_armor` |
 | Saddles, horse and nautilus armor, llama carpets and happy ghast harnesses are removed from every mob that can wear them, exactly like with vanilla shears (pig, strider, horses, donkey, mule, camels, llamas, happy ghast, nautiluses) | `entity/removes_equipment_like_vanilla_shears` |

@@ -25,4 +25,9 @@ public final class FabricGameTestAdapter implements ModInitializer, IGameTestPla
         return previous;
     }
 
+    @Override
+    public int defaultDurability() {
+        return new FabricConfigHelper().DURABILITY;
+    }
+
 }

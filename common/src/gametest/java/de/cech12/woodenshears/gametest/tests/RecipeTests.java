@@ -175,13 +175,13 @@ public final class RecipeTests {
      * crafting repair, #38). Known issue: https://github.com/cech12/WoodenShears/issues/51
      */
     public static void grindstoneResultFollowsConfig(GameTestHelper helper) {
+        // setup and plausibility checks outside of KnownIssues.run: they must always fail the test
+        ItemStack result = combineInGrindstone(helper);
+        helper.assertTrue(result.is(TestUtils.woodenShearsItem()), "two damaged wooden shears cannot be combined in a grindstone: " + result);
         KnownIssues.run(helper, "https://github.com/cech12/WoodenShears/issues/51",
-                Set.of(Platforms.FABRIC, Platforms.FORGE, Platforms.NEOFORGE), () -> {
-            ItemStack result = combineInGrindstone(helper);
-            helper.assertTrue(result.is(TestUtils.woodenShearsItem()), "two damaged wooden shears cannot be combined in a grindstone: " + result);
-            helper.assertTrue(result.getComponentsPatch().forget(type -> type != DataComponents.MAX_DAMAGE).isEmpty(),
-                    "wooden shears combined in a grindstone store a fixed max damage: " + result.getComponentsPatch());
-        });
+                Set.of(Platforms.FABRIC, Platforms.FORGE, Platforms.NEOFORGE), () ->
+                helper.assertTrue(result.getComponentsPatch().forget(type -> type != DataComponents.MAX_DAMAGE).isEmpty(),
+                        "wooden shears combined in a grindstone store a fixed max damage: " + result.getComponentsPatch()));
     }
 
     /** Combines two damaged wooden shears (40 and 30 damage, the first with Efficiency I) in a grindstone. */

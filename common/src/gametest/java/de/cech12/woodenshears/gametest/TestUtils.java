@@ -12,6 +12,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
@@ -92,6 +93,17 @@ public final class TestUtils {
         helper.assertTrue(present, "no item of #" + tag.location() + " was dropped");
     }
 
+
+    /**
+     * Asserts that a sheared bogged dropped its two mushrooms (red or brown, the loot table rolls twice) inside the
+     * test area.
+     */
+    public static void assertBoggedMushroomsDropped(GameTestHelper helper) {
+        int mushrooms = helper.getLevel().getEntitiesOfClass(ItemEntity.class, helper.getBounds()).stream()
+                .filter(entity -> entity.getItem().is(Items.RED_MUSHROOM) || entity.getItem().is(Items.BROWN_MUSHROOM))
+                .mapToInt(entity -> entity.getItem().getCount()).sum();
+        helper.assertValueEqual(mushrooms, 2, "mushrooms dropped by the sheared bogged");
+    }
 
     /** First item of a vanilla item tag that a test needs, with a clear message if the tag is empty. */
     public static Item firstOfTag(GameTestHelper helper, TagKey<Item> tag) {

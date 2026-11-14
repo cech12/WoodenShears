@@ -16,4 +16,12 @@ public interface IGameTestPlatform {
      */
     int setDurability(int durability);
 
+    /**
+     * Reads the default of the durability config option from the config definition of the loader (Forge/NeoForge: the
+     * config spec, Fabric: the initial value of the config class), not from the current config value.
+     *
+     * @return default durability of the config definition
+     */
+    int defaultDurability();
+
 }

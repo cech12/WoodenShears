@@ -41,9 +41,9 @@ curl -fsSL $S | bash -s -- neoforge
 
 All versions come from `gradle.properties`. Additional mods are listed in `scripts/server-starttest.deps`
 (loader, required/optional, Modrinth slug and the `gradle.properties` key of the version); their required dependencies
-are installed automatically. The test fails if the server does not become healthy
-within 10 minutes, does not log "Done", writes a crash report, or logs exceptions, mixin errors or errors mentioning
-the mod id. Known harmless log lines can be excluded in `scripts/server-starttest.allowlist` (one regex per line, in addition to
+are installed automatically. The test fails if the server does not log "Done"
+within 10 minutes, stops again right after the start, writes a crash report, logs exceptions, mixin errors or errors
+mentioning the mod id, or if the mod is not in the mod list of the loader. Known harmless log lines can be excluded in `scripts/server-starttest.allowlist` (one regex per line, in addition to
 the built-in ones of the script).
 Logs and a summary are written to `.server-starttest/<loader>-<mode>/`. A Modrinth request that fails is an error,
 only a missing version of an optional mod is skipped. `--with-integrations` is skipped (exit 0) for loaders without

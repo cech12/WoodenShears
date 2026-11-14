@@ -162,7 +162,7 @@ config file. On Forge, setting the value also saves the server config file in `f
 | Two damaged shears can be combined (remaining durability + 5%), result follows the config (#38) | `repair/combines_two_damaged_shears` |
 | Fully repaired shears are identical to new shears (#38) | `repair/fully_repaired_shears_equal_new_shears` |
 | Two damaged shears can be combined in a grindstone (remaining durability + 5%, enchantments removed) | `repair/grindstone_combines_two_damaged_shears` |
-| Shears combined in a grindstone do not store a fixed max damage, so config changes still apply (known issue [#51](https://github.com/cech12/WoodenShears/issues/51)) | `repair/grindstone_result_follows_config` |
+| Shears combined in a grindstone do not store a fixed max damage, so config changes still apply (fixed [#51](https://github.com/cech12/WoodenShears/issues/51)) | `repair/grindstone_result_follows_config` |
 | Two damaged shears can be combined in an anvil (remaining durability + 12%, enchantments of both kept) | `repair/anvil_combines_two_damaged_shears` |
 | Unbreakable shears (durability 0) cannot be combined | `repair/not_possible_when_unbreakable` |
 
@@ -234,9 +234,7 @@ expected result on each loader, so a change of this behavior is noticed.
 
 ### Known issues (marked with `KnownIssues`)
 
-| Issue | Test | Loaders |
-|---|---|---|
-| [#51](https://github.com/cech12/WoodenShears/issues/51) Shears combined in a grindstone store a fixed max damage | `repair/grindstone_result_follows_config` | Fabric, Forge, NeoForge |
+Currently none.
 
 ### Checked against the Minecraft Wiki
 

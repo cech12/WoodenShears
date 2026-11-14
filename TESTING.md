@@ -168,7 +168,7 @@ config file. On Forge, setting the value also saves the server config file in `f
 | Two damaged shears can be combined (remaining durability + 5%), result follows the config (#38) | `repair/combines_two_damaged_shears` |
 | Fully repaired shears are identical to new shears (#38) | `repair/fully_repaired_shears_equal_new_shears` |
 | Two damaged shears can be combined in a grindstone (remaining durability + 5%, enchantments removed) | `repair/grindstone_combines_two_damaged_shears` |
-| Shears combined in a grindstone do not store a fixed max damage, so config changes still apply (known issue [#51](https://github.com/cech12/WoodenShears/issues/51)) | `repair/grindstone_result_follows_config` |
+| Shears combined in a grindstone do not store a fixed max damage, so config changes still apply (fixed [#51](https://github.com/cech12/WoodenShears/issues/51)) | `repair/grindstone_result_follows_config` |
 | Two damaged shears can be combined in an anvil (remaining durability + 12%, enchantments of both kept) | `repair/anvil_combines_two_damaged_shears` |
 | Unbreakable shears (durability 0) cannot be combined | `repair/not_possible_when_unbreakable` |
 
@@ -241,8 +241,6 @@ expected result on each loader, so a change of this behavior is noticed.
 
 | Issue | Test | Loaders |
 |---|---|---|
-| [#51](https://github.com/cech12/WoodenShears/issues/51) Shears combined in a grindstone store a fixed max damage | `repair/grindstone_result_follows_config` | Fabric, Forge, NeoForge |
-| Forge 61.0.x - 61.1.3 bug (checked with 61.0.2 and 61.1.0): pumpkins cannot be carved with any shears, also not with vanilla shears, but with every other item (`PumpkinBlock#useItemOn` checks the `SHEARS_CARVE` tool action the wrong way round), fixed in Forge 61.1.4 | `block/carves_pumpkin` | Forge |
 | Forge 61.x (checked with 61.0.2, 61.1.0 and 61.1.4): the loot tables of `twisting_vines_plant` and `weeping_vines_plant` are not replaced with the shears tool action, so wooden shears drop the vines only randomly (not fixed in any Forge version up to 26.2; in 26.3 the vanilla predicate `minecraft:tool/can_shear` solves it) | `block/drops_like_vanilla_shears` | Forge |
 
 ### Checked against the Minecraft Wiki

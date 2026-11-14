@@ -1,8 +1,6 @@
 package de.cech12.woodenshears.gametest.tests;
 
 import de.cech12.woodenshears.Constants;
-import de.cech12.woodenshears.gametest.KnownIssues;
-import de.cech12.woodenshears.gametest.Platforms;
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
 import de.cech12.woodenshears.platform.Services;
@@ -33,7 +31,6 @@ import net.minecraft.world.level.GameType;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Crafting recipe, recipe unlock advancement and repairing by combining two wooden shears.
@@ -172,16 +169,15 @@ public final class RecipeTests {
 
     /**
      * Shears combined in a grindstone do not store a fixed max damage, so config changes still apply to them (like the
-     * crafting repair, #38). Known issue: https://github.com/cech12/WoodenShears/issues/51
+     * crafting repair, #38). Fixed #51.
      */
     public static void grindstoneResultFollowsConfig(GameTestHelper helper) {
-        // setup and plausibility checks outside of KnownIssues.run: they must always fail the test
         ItemStack result = combineInGrindstone(helper);
         helper.assertTrue(result.is(TestUtils.woodenShearsItem()), "two damaged wooden shears cannot be combined in a grindstone: " + result);
-        KnownIssues.run(helper, "https://github.com/cech12/WoodenShears/issues/51",
-                Set.of(Platforms.FABRIC, Platforms.FORGE, Platforms.NEOFORGE), () ->
-                helper.assertTrue(result.getComponentsPatch().forget(type -> type != DataComponents.MAX_DAMAGE).isEmpty(),
-                        "wooden shears combined in a grindstone store a fixed max damage: " + result.getComponentsPatch()));
+        helper.assertTrue(result.getComponentsPatch().forget(type -> type != DataComponents.MAX_DAMAGE).isEmpty(),
+                "wooden shears combined in a grindstone store a fixed max damage: " + result.getComponentsPatch());
+        helper.assertValueEqual(result.getMaxDamage(), Services.CONFIG.getDurability(), "max damage of the combined shears");
+        helper.succeed();
     }
 
     /** Combines two damaged wooden shears (40 and 30 damage, the first with Efficiency I) in a grindstone. */

@@ -5,6 +5,7 @@
   "refmap": "woodenshears.refmap.json",
   "mixins": [
     "DataComponentHolderMixin",
+    "GrindstoneMenuMixin",
     "RepairItemRecipeMixin"
   ],
   "injectors": {

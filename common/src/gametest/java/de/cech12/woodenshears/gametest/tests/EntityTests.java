@@ -1,7 +1,5 @@
 package de.cech12.woodenshears.gametest.tests;
 
-import de.cech12.woodenshears.gametest.KnownIssues;
-import de.cech12.woodenshears.gametest.Platforms;
 import de.cech12.woodenshears.gametest.TestUtils;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
 import net.minecraft.advancements.AdvancementHolder;
@@ -36,7 +34,6 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -103,13 +100,11 @@ public final class EntityTests {
         MushroomCow mooshroom = helper.spawn(EntityTypes.MOOSHROOM, TestUtils.CENTER);
         ServerPlayer player = survivalPlayer(helper);
         assertConsumed(helper, TestUtils.interact(player, mooshroom), "mooshroom");
-        helper.startSequence()
-                .thenWaitUntil(() -> {
-                    helper.assertEntityPresent(EntityTypes.COW);
-                    TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after shearing a mooshroom");
-                })
-                .thenExecute(() -> KnownIssues.run(helper, "Forge 65.0.0 (26.2): sheared mooshrooms drop the shears instead of the mushrooms (MushroomCow#shearInternal adds the tool instead of the drop, also with vanilla shears), fixed in Forge 65.0.1", Set.of(Platforms.FORGE), () ->
-                        helper.assertItemEntityPresent(Items.RED_MUSHROOM)));
+        helper.succeedWhen(() -> {
+            helper.assertEntityPresent(EntityTypes.COW);
+            helper.assertItemEntityPresent(Items.RED_MUSHROOM);
+            TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after shearing a mooshroom");
+        });
     }
 
     /** Shearing a snow golem removes its pumpkin. */
@@ -155,11 +150,10 @@ public final class EntityTests {
         helper.assertTrue(cube.readyForShearing(), "sulfur cube test setup failed: cube is not ready for shearing");
         ServerPlayer player = survivalPlayer(helper);
         assertConsumed(helper, TestUtils.interact(player, cube), "sulfur cube");
-        KnownIssues.run(helper, "Forge 65.0.0 (26.2): sulfur cubes only accept vanilla shears by hand (SulfurCube#mobInteract checks is(Items.SHEARS), the IForgeShearable#onSheared default drops nothing), fixed in Forge 65.0.1", Set.of(Platforms.FORGE), () -> {
-            helper.assertTrue(cube.getItemBySlot(EquipmentSlot.BODY).isEmpty(), "sulfur cube still contains its item");
-            helper.assertItemEntityPresent(swallowable);
-            TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after shearing a sulfur cube");
-        });
+        helper.assertTrue(cube.getItemBySlot(EquipmentSlot.BODY).isEmpty(), "sulfur cube still contains its item");
+        helper.assertItemEntityPresent(swallowable);
+        TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after shearing a sulfur cube");
+        helper.succeed();
     }
 
     /** Mob that is not ready for shearing, with the setup that makes it so. */

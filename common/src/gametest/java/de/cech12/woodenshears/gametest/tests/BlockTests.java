@@ -68,11 +68,10 @@ public final class BlockTests {
         helper.setBlock(TestUtils.CENTER, Blocks.PUMPKIN);
         ServerPlayer player = survivalPlayer(helper);
         helper.useBlock(TestUtils.CENTER, player);
-        KnownIssues.run(helper, "Forge 61.0.x - 61.1.3 (1.21.11, checked with 61.0.2 and 61.1.0): PumpkinBlock#useItemOn checks canPerformAction(SHEARS_CARVE) the wrong way round, so no shears can carve pumpkins (also vanilla shears, but every other item can), fixed in Forge 61.1.4", Set.of(Platforms.FORGE), () -> {
-            helper.assertBlockPresent(Blocks.CARVED_PUMPKIN, TestUtils.CENTER);
-            helper.assertItemEntityPresent(Items.PUMPKIN_SEEDS);
-            TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after carving a pumpkin");
-        });
+        helper.assertBlockPresent(Blocks.CARVED_PUMPKIN, TestUtils.CENTER);
+        helper.assertItemEntityPresent(Items.PUMPKIN_SEEDS);
+        TestUtils.assertDamage(helper, player.getMainHandItem(), 1, "after carving a pumpkin");
+        helper.succeed();
     }
 
     /**

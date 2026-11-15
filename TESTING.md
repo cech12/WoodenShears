@@ -16,9 +16,11 @@ they reuse the Minecraft setup and the compiled classes of the build. The server
 needs the release jars), and publishing on a tag only starts when build, game tests and server start test succeeded.
 Once a week (`.github/workflows/server-starttest-newest.yml`, also startable manually) the server start test runs with
 the newest loader and dependency versions. It does not block releases, but shows when a new loader or dependency
-release breaks the mod. GitHub deactivates scheduled workflows of public repositories after 60 days without activity
-in the repository, and mails about failed scheduled runs only go to the user who last changed the cron line. If the
-weekly run is deactivated, enable it again in the Actions tab of the repository.
+release breaks the mod. GitHub runs scheduled workflows only on the default branch (`26.x`), so the older version
+branches (`26.2`, `26.1`, `1.21`, ...) never get the weekly run; start it manually (`workflow_dispatch`) on such a
+branch if needed. GitHub deactivates scheduled workflows of public repositories after 60 days without activity in the
+repository, and mails about failed scheduled runs only go to the user who last changed the cron line. If the weekly
+run is deactivated, enable it again in the Actions tab of the repository.
 
 The CI depends on external services: the shared workflows and the server start script are used from `@main` of
 [cech12/MinecraftModActions](https://github.com/cech12/MinecraftModActions), the server start test needs Docker Hub

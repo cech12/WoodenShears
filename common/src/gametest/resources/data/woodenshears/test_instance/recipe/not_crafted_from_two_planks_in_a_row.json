@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "woodenshears:recipe/not_crafted_from_two_planks_in_a_row",
+  "environment": "woodenshears:default",
+  "structure": "woodenshears:platform",
+  "max_ticks": 100
+}

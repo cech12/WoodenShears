@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "woodenshears:durability/above_maximum_is_limited",
+  "environment": "woodenshears:durability_20000",
+  "structure": "woodenshears:platform",
+  "max_ticks": 100
+}

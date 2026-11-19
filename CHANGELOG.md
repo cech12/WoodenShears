@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 ## [1.21.11-3.7.1.2] - 2026-11-19
 ### Fixed
 - wooden shears combined in a grindstone with an older version still had a fixed max durability, now they follow the durability config again (all loaders) #51
-- wooden shears repaired to full durability in an anvil or with mending kept a stored damage of 0, so they differed from new shears (found by the new game tests) (all loaders)
+- wooden shears repaired to full durability in an anvil or with mending (or damaged while unbreakable) kept a stored damage of 0, so they differed from new shears (found by the new game tests) (all loaders)
 - the Russian config tooltips were shifted and missed the range (Fabric/Quilt)
 
 ## [1.21.11-3.7.1.1] - 2026-11-15

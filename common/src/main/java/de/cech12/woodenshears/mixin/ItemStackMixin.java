@@ -19,7 +19,9 @@ public class ItemStackMixin {
     @Inject(at = @At("RETURN"), method = "setDamageValue")
     private void woodenshears$removeZeroDamage(int damage, CallbackInfo ci) {
         ItemStack stack = (ItemStack) (Object) this;
-        if (damage <= 0 && stack.getItem() instanceof WoodenShearsItem) {
+        // the stored value counts (the damage is clamped, e.g. to 0 when the shears are unbreakable), not the argument
+        Integer stored = stack.getComponents().get(DataComponents.DAMAGE);
+        if (stored != null && stored <= 0 && stack.getItem() instanceof WoodenShearsItem) {
             stack.remove(DataComponents.DAMAGE);
         }
     }

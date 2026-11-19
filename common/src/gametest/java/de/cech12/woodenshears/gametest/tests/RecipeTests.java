@@ -121,6 +121,18 @@ public final class RecipeTests {
         var criterion = advancement.value().criteria().get("has_planks");
         helper.assertTrue(criterion != null, "recipe advancement has no has_planks criterion");
         helper.assertTrue(criterion.trigger() == net.minecraft.advancements.CriteriaTriggers.INVENTORY_CHANGED, "has_planks is no inventory_changed trigger");
+        helper.assertTrue(criterion.triggerInstance() instanceof net.minecraft.advancements.criterion.InventoryChangeTrigger.TriggerInstance inventory
+                        && inventory.items().size() == 1 && inventory.items().getFirst().test(new ItemStack(Items.OAK_PLANKS))
+                        && inventory.items().getFirst().test(new ItemStack(Items.BIRCH_PLANKS))
+                        && !inventory.items().getFirst().test(new ItemStack(Items.STICK)),
+                "has_planks does not check for planks");
+        var hasTheRecipe = advancement.value().criteria().get("has_the_recipe");
+        helper.assertTrue(hasTheRecipe != null, "recipe advancement has no has_the_recipe criterion");
+        var ownRecipe = helper.getLevel().recipeAccess().byKey(RECIPE);
+        helper.assertTrue(ownRecipe.isPresent(), "recipe " + RECIPE.identifier() + " is missing");
+        helper.assertTrue(hasTheRecipe.triggerInstance() instanceof net.minecraft.advancements.criterion.RecipeUnlockedTrigger.TriggerInstance unlocked
+                        && unlocked.matches(ownRecipe.get()),
+                "has_the_recipe does not check for its own recipe: " + hasTheRecipe.triggerInstance());
         // either criterion alone completes the advancement (OR), so having planks is enough
         var requirements = advancement.value().requirements();
         helper.assertTrue(requirements.test("has_planks"::equals), "recipe advancement is not completed by has_planks alone: " + requirements);

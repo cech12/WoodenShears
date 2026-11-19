@@ -7,6 +7,7 @@ import de.cech12.woodenshears.platform.Services;
 import de.cech12.woodenshears.platform.services.IConfigHelper;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.item.Items;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
@@ -27,11 +28,13 @@ public final class DurabilityTests {
         tests.add("durability/above_maximum_is_limited", DurabilityTests::aboveMaximumIsLimited);
         tests.add("durability/zero_makes_shears_unbreakable", DurabilityTests::zeroMakesShearsUnbreakable);
         tests.add("durability/below_zero_makes_shears_unbreakable", DurabilityTests::zeroMakesShearsUnbreakable);
+        tests.add("durability/setting_damage_when_unbreakable_stores_nothing", DurabilityTests::settingDamageWhenUnbreakableStoresNothing);
         tests.add("durability/shears_break_when_used_up", DurabilityTests::shearsBreakWhenUsedUp);
         tests.add("durability/config_change_applies_to_existing_shears", DurabilityTests::configChangeAppliesToExistingShears);
+        tests.add("durability/stored_max_damage_is_ignored", DurabilityTests::storedMaxDamageIsIgnored);
     }
 
-    /** Default durability as documented (README, TESTING.md, config description). */
+    /** Default durability as documented (TESTING.md, config description and config tooltip). */
     private static final int DOCUMENTED_DEFAULT = 50;
 
     private static void assertMaxDamage(GameTestHelper helper, ItemStack stack, int expected) {
@@ -51,6 +54,10 @@ public final class DurabilityTests {
         helper.assertValueEqual(GameTestPlatform.INSTANCE.defaultDurability(), DOCUMENTED_DEFAULT, "default durability of the config definition");
         helper.assertValueEqual(Services.CONFIG.getDurability(), DOCUMENTED_DEFAULT, "configured durability");
         assertMaxDamage(helper, TestUtils.woodenShears(), DOCUMENTED_DEFAULT);
+        // direct component access (e.g. the minecraft:damage item predicate of loot tables and advancements) sees the
+        // same values as vanilla shears: damage 0 and the max damage of the config
+        helper.assertValueEqual(TestUtils.woodenShears().get(DataComponents.DAMAGE), new ItemStack(Items.SHEARS).get(DataComponents.DAMAGE), "damage component of new wooden shears");
+        helper.assertValueEqual(TestUtils.woodenShears().get(DataComponents.MAX_DAMAGE), DOCUMENTED_DEFAULT, "max damage component of new wooden shears");
         helper.succeed();
     }
 
@@ -114,6 +121,33 @@ public final class DurabilityTests {
         helper.assertTrue(!stack.isDamageableItem(), "existing wooden shears are still damageable after durability was set to 0");
         GameTestPlatform.INSTANCE.setDurability(IConfigHelper.DURABILITY_DEFAULT);
         assertMaxDamage(helper, stack, IConfigHelper.DURABILITY_DEFAULT);
+        helper.succeed();
+    }
+
+    /**
+     * Environment "default": shears that store a fixed max damage (combined in a grindstone before the fix of
+     * WoodenShears#51) still use the configured durability.
+     */
+    public static void storedMaxDamageIsIgnored(GameTestHelper helper) {
+        ItemStack stack = TestUtils.woodenShears();
+        int stored = Services.CONFIG.getDurability() + 20; // any value other than the configured one
+        stack.set(DataComponents.MAX_DAMAGE, stored);
+        stack.setDamageValue(10);
+        assertMaxDamage(helper, stack, Services.CONFIG.getDurability());
+        helper.assertValueEqual(stack.get(DataComponents.MAX_DAMAGE), Services.CONFIG.getDurability(), "max damage component with a stored max damage");
+        TestUtils.assertDamage(helper, stack, 10, "with a stored max damage");
+        helper.succeed();
+    }
+
+    /**
+     * Environment "durability_0": setting a damage on unbreakable shears (commands, other mods) is clamped to 0 and stores
+     * nothing, so the shears still equal new ones when the durability is activated again.
+     */
+    public static void settingDamageWhenUnbreakableStoresNothing(GameTestHelper helper) {
+        ItemStack stack = TestUtils.woodenShears();
+        stack.setDamageValue(5);
+        helper.assertTrue(ItemStack.isSameItemSameComponents(stack, TestUtils.woodenShears()),
+                "unbreakable wooden shears store a damage: " + stack.getComponentsPatch());
         helper.succeed();
     }
 

@@ -144,6 +144,7 @@ config (`Services.CONFIG.getDurability()`).
 | Maximum value 10000 | `durability/maximum_value` |
 | Values above 10000 are limited to 10000 | `durability/above_maximum_is_limited` |
 | 0 makes the shears unbreakable (not damageable, no max damage) | `durability/zero_makes_shears_unbreakable` |
+| Setting a damage on unbreakable shears (commands, other mods) stores nothing, they still equal new shears | `durability/setting_damage_when_unbreakable_stores_nothing` |
 | Values below 0 behave like 0 | `durability/below_zero_makes_shears_unbreakable` |
 | Shears break after 50 uses (the default of the config definition) | `durability/shears_break_when_used_up` |
 | Shears with a stored max damage (combined in a grindstone before the fix of #51) use the configured durability | `durability/stored_max_damage_is_ignored` |
@@ -163,6 +164,7 @@ config file. On Forge, setting the value also saves the server config file in `f
 |---|---|
 | Two planks of any kind placed diagonally (both directions, mixed kinds) craft wooden shears | `recipe/crafted_from_two_diagonal_planks` |
 | Two planks in a row / column do not match the recipe | `recipe/not_crafted_from_two_planks_in_a_row` |
+| One plank, three planks on a diagonal and two diagonal sticks, logs or a plank with a stick do not match the recipe | `recipe/not_crafted_from_other_items` |
 | Recipe is in the "equipment" recipe book category (#27) | `recipe/is_in_equipment_category` |
 | Recipe is unlocked when the player has planks (any kind) or already knows the recipe | `recipe/unlocked_by_having_planks` |
 | Two damaged shears can be combined (remaining durability + 5%), result follows the config (#38) | `repair/combines_two_damaged_shears` |

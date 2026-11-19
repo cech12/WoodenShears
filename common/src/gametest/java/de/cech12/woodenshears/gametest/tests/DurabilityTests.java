@@ -28,6 +28,7 @@ public final class DurabilityTests {
         tests.add("durability/above_maximum_is_limited", DurabilityTests::aboveMaximumIsLimited);
         tests.add("durability/zero_makes_shears_unbreakable", DurabilityTests::zeroMakesShearsUnbreakable);
         tests.add("durability/below_zero_makes_shears_unbreakable", DurabilityTests::zeroMakesShearsUnbreakable);
+        tests.add("durability/setting_damage_when_unbreakable_stores_nothing", DurabilityTests::settingDamageWhenUnbreakableStoresNothing);
         tests.add("durability/shears_break_when_used_up", DurabilityTests::shearsBreakWhenUsedUp);
         tests.add("durability/config_change_applies_to_existing_shears", DurabilityTests::configChangeAppliesToExistingShears);
         tests.add("durability/stored_max_damage_is_ignored", DurabilityTests::storedMaxDamageIsIgnored);
@@ -135,6 +136,18 @@ public final class DurabilityTests {
         assertMaxDamage(helper, stack, Services.CONFIG.getDurability());
         helper.assertValueEqual(stack.get(DataComponents.MAX_DAMAGE), Services.CONFIG.getDurability(), "max damage component with a stored max damage");
         TestUtils.assertDamage(helper, stack, 10, "with a stored max damage");
+        helper.succeed();
+    }
+
+    /**
+     * Environment "durability_0": setting a damage on unbreakable shears (commands, other mods) is clamped to 0 and stores
+     * nothing, so the shears still equal new ones when the durability is activated again.
+     */
+    public static void settingDamageWhenUnbreakableStoresNothing(GameTestHelper helper) {
+        ItemStack stack = TestUtils.woodenShears();
+        stack.setDamageValue(5);
+        helper.assertTrue(ItemStack.isSameItemSameComponents(stack, TestUtils.woodenShears()),
+                "unbreakable wooden shears store a damage: " + stack.getComponentsPatch());
         helper.succeed();
     }
 

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "woodenshears:durability/setting_damage_when_unbreakable_stores_nothing",
+  "environment": "woodenshears:durability_0",
+  "structure": "woodenshears:platform",
+  "max_ticks": 100
+}

@@ -44,6 +44,7 @@ public final class RecipeTests {
     public static void register(WoodenShearsGameTests.TestCollector tests) {
         tests.add("recipe/crafted_from_two_diagonal_planks", RecipeTests::craftedFromTwoDiagonalPlanks);
         tests.add("recipe/not_crafted_from_two_planks_in_a_row", RecipeTests::notCraftedFromTwoPlanksInARow);
+        tests.add("recipe/not_crafted_from_other_items", RecipeTests::notCraftedFromOtherItems);
         tests.add("recipe/is_in_equipment_category", RecipeTests::isInEquipmentCategory);
         tests.add("recipe/unlocked_by_having_planks", RecipeTests::unlockedByHavingPlanks);
         tests.add("repair/combines_two_damaged_shears", RecipeTests::combinesTwoDamagedShears);
@@ -51,6 +52,9 @@ public final class RecipeTests {
         tests.add("repair/grindstone_result_follows_config", RecipeTests::grindstoneResultFollowsConfig);
         tests.add("repair/anvil_combines_two_damaged_shears", RecipeTests::anvilCombinesTwoDamagedShears);
         tests.add("repair/fully_repaired_shears_equal_new_shears", RecipeTests::fullyRepairedShearsEqualNewShears);
+        tests.add("repair/anvil_fully_repaired_shears_like_vanilla_shears", RecipeTests::anvilFullyRepairedShearsLikeVanillaShears);
+        tests.add("repair/grindstone_disenchants_single_shears", RecipeTests::grindstoneDisenchantsSingleShears);
+        tests.add("repair/no_repair_material_like_vanilla_shears", RecipeTests::noRepairMaterialLikeVanillaShears);
         tests.add("repair/not_possible_when_unbreakable", RecipeTests::notPossibleWhenUnbreakable);
     }
 
@@ -101,6 +105,30 @@ public final class RecipeTests {
         helper.succeed();
     }
 
+    /**
+     * Negative cases: one plank, three planks on a diagonal, and two diagonal sticks, logs or a plank with a stick do not
+     * match the wooden shears recipe. Checks the recipe itself, because another recipe could win the recipe lookup.
+     */
+    public static void notCraftedFromOtherItems(GameTestHelper helper) {
+        var recipe = helper.getLevel().recipeAccess().byKey(RECIPE);
+        helper.assertTrue(recipe.isPresent() && recipe.get().value() instanceof CraftingRecipe, "recipe " + RECIPE.identifier() + " is missing");
+        @SuppressWarnings("unchecked")
+        Recipe<CraftingInput> craftingRecipe = (Recipe<CraftingInput>) recipe.get().value();
+        ItemStack plank = new ItemStack(Items.OAK_PLANKS);
+        ItemStack stick = new ItemStack(Items.STICK);
+        ItemStack log = new ItemStack(Items.OAK_LOG);
+        ItemStack empty = ItemStack.EMPTY;
+        for (CraftingInput input : List.of(
+                CraftingInput.of(1, 1, List.of(plank)),
+                CraftingInput.of(3, 3, List.of(empty, empty, plank, empty, plank, empty, plank, empty, empty)),
+                CraftingInput.of(2, 2, List.of(empty, stick, stick, empty)),
+                CraftingInput.of(2, 2, List.of(empty, log, log, empty)),
+                CraftingInput.of(2, 2, List.of(empty, plank, stick, empty)))) {
+            helper.assertTrue(!craftingRecipe.matches(input, helper.getLevel()), "the wooden shears recipe matches " + input.items());
+        }
+        helper.succeed();
+    }
+
     /** #27: the recipe is shown in the equipment category of the recipe book. */
     public static void isInEquipmentCategory(GameTestHelper helper) {
         var recipe = helper.getLevel().recipeAccess().byKey(RECIPE);
@@ -118,6 +146,23 @@ public final class RecipeTests {
         var criterion = advancement.value().criteria().get("has_planks");
         helper.assertTrue(criterion != null, "recipe advancement has no has_planks criterion");
         helper.assertTrue(criterion.trigger() == net.minecraft.advancements.CriteriaTriggers.INVENTORY_CHANGED, "has_planks is no inventory_changed trigger");
+        helper.assertTrue(criterion.triggerInstance() instanceof net.minecraft.advancements.criterion.InventoryChangeTrigger.TriggerInstance inventory
+                        && inventory.items().size() == 1 && inventory.items().getFirst().test(new ItemStack(Items.OAK_PLANKS))
+                        && inventory.items().getFirst().test(new ItemStack(Items.BIRCH_PLANKS))
+                        && !inventory.items().getFirst().test(new ItemStack(Items.STICK)),
+                "has_planks does not check for planks");
+        var hasTheRecipe = advancement.value().criteria().get("has_the_recipe");
+        helper.assertTrue(hasTheRecipe != null, "recipe advancement has no has_the_recipe criterion");
+        var ownRecipe = helper.getLevel().recipeAccess().byKey(RECIPE);
+        helper.assertTrue(ownRecipe.isPresent(), "recipe " + RECIPE.identifier() + " is missing");
+        helper.assertTrue(hasTheRecipe.triggerInstance() instanceof net.minecraft.advancements.criterion.RecipeUnlockedTrigger.TriggerInstance unlocked
+                        && unlocked.matches(ownRecipe.get()),
+                "has_the_recipe does not check for its own recipe: " + hasTheRecipe.triggerInstance());
+        // either criterion alone completes the advancement (OR), so having planks is enough
+        var requirements = advancement.value().requirements();
+        helper.assertTrue(requirements.test("has_planks"::equals), "recipe advancement is not completed by has_planks alone: " + requirements);
+        helper.assertTrue(requirements.test("has_the_recipe"::equals), "recipe advancement is not completed by has_the_recipe alone: " + requirements);
+        helper.assertTrue(!requirements.test(criterion2 -> false), "recipe advancement is completed without any criterion: " + requirements);
         helper.succeed();
     }
 
@@ -231,10 +276,82 @@ public final class RecipeTests {
         helper.succeed();
     }
 
+    private static AnvilMenu anvil(GameTestHelper helper) {
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, ItemStack.EMPTY);
+        return new AnvilMenu(0, player.getInventory(), ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(TestUtils.CENTER)));
+    }
+
+    /**
+     * Shears combined to full durability in an anvil have the same stored components as vanilla shears combined the
+     * same way (the repair cost, but no leftover damage or max damage).
+     */
+    public static void anvilFullyRepairedShearsLikeVanillaShears(GameTestHelper helper) {
+        List<ItemStack> results = new java.util.ArrayList<>();
+        for (ItemStack prototype : List.of(TestUtils.woodenShears(), new ItemStack(Items.SHEARS))) {
+            ItemStack first = prototype.copy();
+            first.setDamageValue(1);
+            ItemStack second = prototype.copy();
+            second.setDamageValue(1);
+            ItemStack result = combine(anvil(helper), first, second);
+            helper.assertTrue(result.is(prototype.getItem()) && result.getDamageValue() == 0, "two slightly damaged " + prototype + " are not fully repaired in an anvil: " + result);
+            results.add(result);
+        }
+        var mod = TestUtils.storedComponentTypes(results.get(0));
+        var vanilla = TestUtils.storedComponentTypes(results.get(1));
+        helper.assertValueEqual(mod, vanilla, "stored components of fully repaired wooden shears compared to vanilla shears");
+        helper.succeed();
+    }
+
+    /**
+     * Like vanilla shears, a single enchanted and damaged pair of shears is disenchanted in a grindstone: the damage is
+     * kept, no fixed max damage is stored.
+     */
+    public static void grindstoneDisenchantsSingleShears(GameTestHelper helper) {
+        ItemStack shears = TestUtils.woodenShears();
+        shears.setDamageValue(10);
+        shears.enchant(enchantment(helper, Enchantments.EFFICIENCY), 1);
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, ItemStack.EMPTY);
+        GrindstoneMenu menu = new GrindstoneMenu(0, player.getInventory(), ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(TestUtils.CENTER)));
+        ItemStack result = combine(menu, shears, ItemStack.EMPTY);
+        helper.assertTrue(result.is(TestUtils.woodenShearsItem()), "a single wooden shears cannot be disenchanted in a grindstone: " + result);
+        helper.assertTrue(result.getEnchantments().isEmpty(), "grindstone did not remove the enchantments: " + result.getEnchantments());
+        TestUtils.assertDamage(helper, result, 10, "after disenchanting in a grindstone");
+        helper.assertTrue(result.getComponentsPatch().forget(type -> type != DataComponents.MAX_DAMAGE).isEmpty(),
+                "disenchanted wooden shears store a fixed max damage: " + result.getComponentsPatch());
+        helper.succeed();
+    }
+
+    /**
+     * Like vanilla shears, wooden shears have no repair material: an anvil does not repair them with any item (only by
+     * combining two shears).
+     */
+    public static void noRepairMaterialLikeVanillaShears(GameTestHelper helper) {
+        helper.assertTrue(java.util.Objects.equals(TestUtils.woodenShears().get(DataComponents.REPAIRABLE), new ItemStack(Items.SHEARS).get(DataComponents.REPAIRABLE)),
+                "repair material differs from vanilla shears: " + TestUtils.woodenShears().get(DataComponents.REPAIRABLE));
+        for (var material : List.of(Items.OAK_PLANKS, Items.STICK, Items.IRON_INGOT)) {
+            ItemStack shears = TestUtils.woodenShears();
+            shears.setDamageValue(20);
+            ItemStack result = combine(anvil(helper), shears, new ItemStack(material, 4));
+            helper.assertTrue(result.isEmpty(), "wooden shears are repaired with " + material + " in an anvil: " + result);
+        }
+        helper.succeed();
+    }
+
     /** Environment "durability_0": unbreakable wooden shears cannot be damaged, so the repair recipe does not apply. */
     public static void notPossibleWhenUnbreakable(GameTestHelper helper) {
         ItemStack result = craft(helper, CraftingInput.of(2, 1, List.of(TestUtils.woodenShears(), TestUtils.woodenShears())));
         helper.assertTrue(result.isEmpty(), "unbreakable wooden shears can be combined: " + result);
+        ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, ItemStack.EMPTY);
+        GrindstoneMenu grindstone = new GrindstoneMenu(0, player.getInventory(), ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(TestUtils.CENTER)));
+        ItemStack grindstoneResult = combine(grindstone, TestUtils.woodenShears(), TestUtils.woodenShears());
+        helper.assertTrue(grindstoneResult.isEmpty(), "unbreakable wooden shears can be combined in a grindstone: " + grindstoneResult);
+        // enchanted, so that the anvil would combine them if they were damageable (enchantments of both are merged)
+        ItemStack first = TestUtils.woodenShears();
+        first.enchant(enchantment(helper, Enchantments.EFFICIENCY), 1);
+        ItemStack second = TestUtils.woodenShears();
+        second.enchant(enchantment(helper, Enchantments.UNBREAKING), 1);
+        ItemStack anvilResult = combine(anvil(helper), first, second);
+        helper.assertTrue(anvilResult.isEmpty(), "unbreakable wooden shears can be combined in an anvil: " + anvilResult);
         helper.succeed();
     }
 

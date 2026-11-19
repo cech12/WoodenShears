@@ -102,8 +102,9 @@ test mod (`woodenshears_gametest`), on NeoForge it is part of the main mod. It i
 4. Run `./gradlew runGameTestServer` and make sure the test fails if the feature is broken.
 5. Add the test to the feature table below.
 
-`GameTestHelper#assertValueEqual(value, expected, name)` of Minecraft 26.2 and older prints the two values the wrong
-way round in its failure message ("Expected <name> to be <value>: was <expected>", fixed in 26.3). Pass and fail are
+In Minecraft 1.21.11 `GameTestHelper#assertValueEqual` takes `(expected, actual, name)`. The tests pass the actual
+value first (signature `(value, expected, name)` of 26.x), so a failure message reads "Expected <name> to be <actual
+value>: was <expected value>". Pass and fail are
 not affected, only read the message accordingly.
 
 If a test reveals a bug that cannot be fixed in the same change, wrap the assertions in
@@ -127,8 +128,10 @@ loader differences check the expected behavior of each loader (see "Data packs")
 | Listed in the creative tab "Tools & Utilities" | `item/is_in_tools_and_utilities_tab` |
 | Part of the common tag `c:tools/shear` (#17) | `item/is_in_common_shears_tag` |
 | Enchantable like vanilla shears with every enchantment (Efficiency, Unbreaking, Mending, Curse of Vanishing), only with an anvil, not at the enchanting table (regression 1.20.6-2.3.0.1) | `item/is_enchantable_like_vanilla_shears` |
+| All default components equal vanilla shears (tool rules incl. breaking blocks in creative, stack size, enchantability, rarity, ...), except name, model and durability | `item/has_the_components_of_vanilla_shears` |
+| Mending repairs wooden shears exactly like vanilla shears, shears mended to full durability store no leftover damage (fixed: a damage of 0 was stored) | `item/mending_repairs_like_vanilla_shears` |
 | Same mining speed and correct-tool behavior as vanilla shears for every block (cobweb, leaves, wool, ...) | `item/mines_like_vanilla_shears` |
-| Same durability loss as vanilla shears when breaking any block: 1 for blocks with hardness, nothing for blocks without hardness like fire (#40) | `item/loses_durability_per_block_like_vanilla_shears` |
+| Same durability loss as vanilla shears when breaking any block: 1 for every block except fire, also for blocks without hardness like grass (#40 asked for no loss there and was closed in favor of the vanilla behavior) | `item/loses_durability_per_block_like_vanilla_shears` |
 | Furnace fuel with the burn time of wooden tools (#39), as the furnace of the loader determines it (vanilla fuel values, on NeoForge the burn time of the item) | `item/is_fuel_like_wooden_tools`, `item/burns_in_furnace` |
 
 ### Durability config option (`durability`, default 50, range 0 - 10000, 0 deactivates the durability)
@@ -140,13 +143,16 @@ config (`Services.CONFIG.getDurability()`).
 
 | Feature | Test(s) |
 |---|---|
+| New shears have the damage component 0 and the configured max damage like vanilla shears, also for direct component access (e.g. the `minecraft:damage` item predicate) | `durability/default_value` |
 | Default 50, read from the config definition of the loader (config spec on Forge/NeoForge, config class on Fabric), not only from the test environment | `durability/default_value` |
 | Custom value (200) | `durability/custom_value` |
 | Maximum value 10000 | `durability/maximum_value` |
 | Values above 10000 are limited to 10000 | `durability/above_maximum_is_limited` |
 | 0 makes the shears unbreakable (not damageable, no max damage) | `durability/zero_makes_shears_unbreakable` |
+| Setting a damage on unbreakable shears (commands, other mods) stores nothing, they still equal new shears | `durability/setting_damage_when_unbreakable_stores_nothing` |
 | Values below 0 behave like 0 | `durability/below_zero_makes_shears_unbreakable` |
 | Shears break after 50 uses (the default of the config definition) | `durability/shears_break_when_used_up` |
+| Shears with a stored max damage (combined in a grindstone before the fix of #51) use the configured durability | `durability/stored_max_damage_is_ignored` |
 | Config changes apply to already existing shears | `durability/config_change_applies_to_existing_shears` |
 
 The limits of `above_maximum_is_limited` and `below_zero_makes_shears_unbreakable` are implemented differently per
@@ -163,14 +169,18 @@ config file. On Forge, setting the value also saves the server config file in `f
 |---|---|
 | Two planks of any kind placed diagonally (both directions, mixed kinds) craft wooden shears | `recipe/crafted_from_two_diagonal_planks` |
 | Two planks in a row / column do not match the recipe | `recipe/not_crafted_from_two_planks_in_a_row` |
+| One plank, three planks on a diagonal and two diagonal sticks, logs or a plank with a stick do not match the recipe | `recipe/not_crafted_from_other_items` |
 | Recipe is in the "equipment" recipe book category (#27) | `recipe/is_in_equipment_category` |
-| Recipe is unlocked when the player has planks | `recipe/unlocked_by_having_planks` |
+| Recipe is unlocked when the player has planks (any kind) or already knows the recipe | `recipe/unlocked_by_having_planks` |
 | Two damaged shears can be combined (remaining durability + 5%), result follows the config (#38) | `repair/combines_two_damaged_shears` |
 | Fully repaired shears are identical to new shears (#38) | `repair/fully_repaired_shears_equal_new_shears` |
 | Two damaged shears can be combined in a grindstone (remaining durability + 5%, enchantments removed) | `repair/grindstone_combines_two_damaged_shears` |
 | Shears combined in a grindstone do not store a fixed max damage, so config changes still apply (fixed [#51](https://github.com/cech12/WoodenShears/issues/51)) | `repair/grindstone_result_follows_config` |
 | Two damaged shears can be combined in an anvil (remaining durability + 12%, enchantments of both kept) | `repair/anvil_combines_two_damaged_shears` |
-| Unbreakable shears (durability 0) cannot be combined | `repair/not_possible_when_unbreakable` |
+| Shears combined to full durability in an anvil store the same components as vanilla shears (only the repair cost; fixed: a damage of 0 was stored) | `repair/anvil_fully_repaired_shears_like_vanilla_shears` |
+| A single enchanted shears is disenchanted in a grindstone, the damage is kept and no max damage is stored | `repair/grindstone_disenchants_single_shears` |
+| Like vanilla shears there is no repair material: an anvil does not repair them with any item | `repair/no_repair_material_like_vanilla_shears` |
+| Unbreakable shears (durability 0) cannot be combined (crafting grid, grindstone, anvil) | `repair/not_possible_when_unbreakable` |
 
 ### Shearing entities (right-click)
 
@@ -178,7 +188,7 @@ config file. On Forge, setting the value also saves the server config file in `f
 |---|---|
 | Sheep: drops wool, sheared, shears lose one durability | `entity/shears_sheep` |
 | Creative mode (sheep, mooshroom, snow golem) works and does not damage the shears | `entity/shears_in_creative_without_damage` |
-| Mooshroom turns into a cow and drops mushrooms | `entity/shears_mooshroom` |
+| Mooshroom turns into a cow and drops red mushrooms, a brown mooshroom (own loot table) drops brown mushrooms | `entity/shears_mooshroom`, `entity/shears_brown_mooshroom` |
 | Snow golem loses its pumpkin | `entity/shears_snow_golem` |
 | Bogged can be sheared and drops two mushrooms (fixed known issue 1.21-3.1.0.0) | `entity/shears_bogged` |
 | Copper golem loses its flower (1.21.9-3.6.0.1) | `entity/shears_copper_golem` |
@@ -186,6 +196,7 @@ config file. On Forge, setting the value also saves the server config file in `f
 | Equipment like a saddle can be cut off, with the same durability loss as vanilla shears | `entity/removes_saddle` |
 | Wolf armor can be removed by the owner, with the same durability loss as vanilla shears, and grants the advancement "Shear Brilliance" (fixed known issue 1.21-3.1.0.0) | `entity/removes_wolf_armor` |
 | Saddles, horse and nautilus armor, llama carpets and happy ghast harnesses are removed from every mob that can wear them, exactly like with vanilla shears (pig, strider, horses, donkey, mule, camels, llamas, happy ghast, nautiluses) | `entity/removes_equipment_like_vanilla_shears` |
+| Equipment is not removed when vanilla shears would not remove it either (sneaking player, ridden mob, Curse of Binding in survival, wolf armor of another owner): no drop, no durability loss | `entity/does_not_remove_equipment_when_not_allowed` |
 | Leash of an entity can be cut (1.21.9-3.6.0.1) | `entity/cuts_leash_of_entity` |
 | Leash knot on a fence can be removed and the shears lose one durability (1.21.9-3.6.0.1) | `entity/cuts_leash_knot` |
 
@@ -208,6 +219,8 @@ config file. On Forge, setting the value also saves the server config file in `f
 | Dispensers shear sheep, mooshrooms, snow golems, bogged and copper golems | `dispenser/shears_sheep`, `dispenser/shears_mooshroom`, `dispenser/shears_snow_golem`, `dispenser/shears_bogged`, `dispenser/shears_copper_golem` |
 | Dispensers harvest full beehives | `dispenser/harvests_full_beehive` |
 | Dispensers cut leashes | `dispenser/cuts_leash` |
+| Dispensers shear brown mooshrooms (brown mushrooms) | `dispenser/shears_brown_mooshroom` |
+| Dispensers do not shear mobs that are not ready (sheared sheep), keep the shears without a target and do not harvest beehives that are not full: the dispenser is triggered, but nothing is dropped, the shears are not damaged and stay in the dispenser | `dispenser/does_not_shear_when_not_ready`, `dispenser/keeps_shears_without_target`, `dispenser/does_not_harvest_beehive_without_honey` |
 
 ### Data packs
 
@@ -234,8 +247,10 @@ expected result on each loader, so a change of this behavior is noticed.
 |---|---|
 | Item name translated in all shipped languages (all files in `assets/woodenshears/lang/`, found automatically), English "Wooden Shears" | `resources/item_name_is_translated` |
 | Item model definition, model and texture exist and reference each other | `resources/item_model_and_texture_exist` |
+| The config screen tooltip (Fabric) shows the real default (50) and range (0 - 10000) in every language that translates it (fixed: the Russian tooltips were shifted and missed the range) | `resources/config_tooltip_shows_default_and_range` |
 | Every test function has a test instance that runs exactly this function | `meta/every_test_function_has_an_instance` |
-| The release jar starts on a dedicated server, with and without integrations (Cloth Config and ModMenu on Fabric) | server start test |
+| The platform name of the mod names the running loader | `meta/platform_name_matches_the_loader` |
+| The release jar starts on a dedicated server, with and without integrations (ModMenu on Fabric; Cloth Config is always installed as a required dependency) | server start test |
 
 ### Known issues (marked with `KnownIssues`)
 
@@ -247,7 +262,8 @@ expected result on each loader, so a change of this behavior is noticed.
 
 The feature list was checked against the [Minecraft Wiki page about shears](https://minecraft.wiki/w/Shears) (all
 uses and the complete version history up to 1.21.11). Vanilla behavior that does not depend on the kind of shears is not
-tested separately: pumpkin face direction, bees getting angry, sounds, loot of chests and villager trades of vanilla
+tested separately: pumpkin face direction, bees getting angry, sounds, the "used" statistic (carving a pumpkin counts
+for vanilla shears on all loaders, `PumpkinBlock` names `Items.SHEARS` directly; accepted), loot of chests and villager trades of vanilla
 shears.
 
 ## Not tested automatically
@@ -259,5 +275,5 @@ These features cannot be checked on a dedicated test server. Check them manually
 | Item texture and model in the inventory and in the hand | Client rendering | Start `runClient`, look at the item in the inventory, hotbar and in first/third person |
 | Item name and tooltip in the game | Client language loading (the files are tested) | Switch the language once, check the item name |
 | Config screen via ModMenu (Fabric) | Client GUI | Fabric client: Mods > Wooden Shears > config, change durability, reopen |
-| Config file creation and editing (`config/woodenshears.toml` on Fabric, server config `woodenshears-server.toml` on Forge/NeoForge) | The tests change the config at runtime, not via the file | Start a server, change `durability` in the file, restart, check the max damage of new shears |
+| Config file creation and editing (`config/woodenshears.toml` on Fabric, server config `serverconfig/woodenshears-server.toml` on Forge and NeoForge) | The tests change the config at runtime, not via the file | Start a server, change `durability` in the file, restart, check the max damage of new shears |
 | Creative tab in the client | Client GUI (the tab contents are tested) | Open the "Tools & Utilities" tab |

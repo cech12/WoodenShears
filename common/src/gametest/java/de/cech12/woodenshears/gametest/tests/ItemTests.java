@@ -194,7 +194,7 @@ public final class ItemTests {
     public static void mendingRepairsLikeVanillaShears(GameTestHelper helper) {
         var mending = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.MENDING);
         List<ItemStack> repaired = new ArrayList<>();
-        for (int damage : new int[] {20, 2}) {
+        for (int damage : new int[] {30, 2}) { // 10 xp repair 20 durability: 30 stays partially damaged
             for (ItemStack prototype : List.of(TestUtils.woodenShears(), new ItemStack(Items.SHEARS))) {
                 ItemStack stack = prototype.copy();
                 stack.setDamageValue(damage);
@@ -204,7 +204,8 @@ public final class ItemTests {
                 repaired.add(player.getMainHandItem());
             }
         }
-        helper.assertTrue(repaired.get(0).getDamageValue() < 20, "mending did not repair wooden shears");
+        helper.assertTrue(repaired.get(0).getDamageValue() > 0 && repaired.get(0).getDamageValue() < 30,
+                "mending did not partially repair wooden shears: damage " + repaired.get(0).getDamageValue());
         helper.assertValueEqual(repaired.get(0).getDamageValue(), repaired.get(1).getDamageValue(), "damage of wooden shears after mending compared to vanilla shears");
         TestUtils.assertDamage(helper, repaired.get(2), 0, "after mending to full durability");
         helper.assertValueEqual(TestUtils.storedComponentTypes(repaired.get(2)), TestUtils.storedComponentTypes(repaired.get(3)),

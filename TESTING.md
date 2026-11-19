@@ -164,7 +164,7 @@ config file. On Forge, setting the value also saves the server config file in `f
 | Two planks of any kind placed diagonally (both directions, mixed kinds) craft wooden shears | `recipe/crafted_from_two_diagonal_planks` |
 | Two planks in a row / column do not match the recipe | `recipe/not_crafted_from_two_planks_in_a_row` |
 | Recipe is in the "equipment" recipe book category (#27) | `recipe/is_in_equipment_category` |
-| Recipe is unlocked when the player has planks | `recipe/unlocked_by_having_planks` |
+| Recipe is unlocked when the player has planks (any kind) or already knows the recipe | `recipe/unlocked_by_having_planks` |
 | Two damaged shears can be combined (remaining durability + 5%), result follows the config (#38) | `repair/combines_two_damaged_shears` |
 | Fully repaired shears are identical to new shears (#38) | `repair/fully_repaired_shears_equal_new_shears` |
 | Two damaged shears can be combined in a grindstone (remaining durability + 5%, enchantments removed) | `repair/grindstone_combines_two_damaged_shears` |

@@ -4,6 +4,7 @@
   "text.autoconfig.woodenshears.option.DURABILITY": "Прочность деревянных ножниц",
   "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[0]": "§6§lПрочность деревянных ножниц",
   "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[1]": "Определяет максимальную прочность деревянных ножниц.",
-  "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[2]": "§7§oПо умолчанию: 50",
-  "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[3]": "§7§o0: отключает прочность у предмета"
+  "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[2]": "§7§o0: отключает прочность у предмета",
+  "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[3]": "§7§oMin: 0; Max: 10000",
+  "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip[4]": "§7§oПо умолчанию: 50"
 }

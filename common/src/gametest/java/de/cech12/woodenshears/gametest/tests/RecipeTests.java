@@ -44,6 +44,7 @@ public final class RecipeTests {
     public static void register(WoodenShearsGameTests.TestCollector tests) {
         tests.add("recipe/crafted_from_two_diagonal_planks", RecipeTests::craftedFromTwoDiagonalPlanks);
         tests.add("recipe/not_crafted_from_two_planks_in_a_row", RecipeTests::notCraftedFromTwoPlanksInARow);
+        tests.add("recipe/not_crafted_from_other_items", RecipeTests::notCraftedFromOtherItems);
         tests.add("recipe/is_in_equipment_category", RecipeTests::isInEquipmentCategory);
         tests.add("recipe/unlocked_by_having_planks", RecipeTests::unlockedByHavingPlanks);
         tests.add("repair/combines_two_damaged_shears", RecipeTests::combinesTwoDamagedShears);
@@ -100,6 +101,30 @@ public final class RecipeTests {
         for (CraftingInput input : List.of(CraftingInput.of(2, 1, List.of(plank, plank)), CraftingInput.of(1, 2, List.of(plank, plank)))) {
             helper.assertTrue(!craftingRecipe.matches(input, helper.getLevel()),
                     "two planks in a " + input.width() + "x" + input.height() + " grid match the wooden shears recipe");
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Negative cases: one plank, three planks on a diagonal, and two diagonal sticks, logs or a plank with a stick do not
+     * match the wooden shears recipe. Checks the recipe itself, because another recipe could win the recipe lookup.
+     */
+    public static void notCraftedFromOtherItems(GameTestHelper helper) {
+        var recipe = helper.getLevel().recipeAccess().byKey(RECIPE);
+        helper.assertTrue(recipe.isPresent() && recipe.get().value() instanceof CraftingRecipe, "recipe " + RECIPE.identifier() + " is missing");
+        @SuppressWarnings("unchecked")
+        Recipe<CraftingInput> craftingRecipe = (Recipe<CraftingInput>) recipe.get().value();
+        ItemStack plank = new ItemStack(Items.OAK_PLANKS);
+        ItemStack stick = new ItemStack(Items.STICK);
+        ItemStack log = new ItemStack(Items.OAK_LOG);
+        ItemStack empty = ItemStack.EMPTY;
+        for (CraftingInput input : List.of(
+                CraftingInput.of(1, 1, List.of(plank)),
+                CraftingInput.of(3, 3, List.of(empty, empty, plank, empty, plank, empty, plank, empty, empty)),
+                CraftingInput.of(2, 2, List.of(empty, stick, stick, empty)),
+                CraftingInput.of(2, 2, List.of(empty, log, log, empty)),
+                CraftingInput.of(2, 2, List.of(empty, plank, stick, empty)))) {
+            helper.assertTrue(!craftingRecipe.matches(input, helper.getLevel()), "the wooden shears recipe matches " + input.items());
         }
         helper.succeed();
     }

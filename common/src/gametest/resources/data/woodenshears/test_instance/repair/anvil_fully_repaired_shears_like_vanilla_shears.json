@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "woodenshears:repair/anvil_fully_repaired_shears_like_vanilla_shears",
+  "environment": "woodenshears:default",
+  "structure": "woodenshears:platform",
+  "max_ticks": 100
+}

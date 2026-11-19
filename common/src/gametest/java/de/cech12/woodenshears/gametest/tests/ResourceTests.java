@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import de.cech12.woodenshears.Constants;
 import de.cech12.woodenshears.gametest.WoodenShearsGameTests;
 import de.cech12.woodenshears.platform.Services;
+import de.cech12.woodenshears.platform.services.IConfigHelper;
 import net.minecraft.gametest.framework.GameTestHelper;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -41,6 +43,7 @@ public final class ResourceTests {
     public static void register(WoodenShearsGameTests.TestCollector tests) {
         tests.add("resources/item_name_is_translated", ResourceTests::itemNameIsTranslated);
         tests.add("resources/item_model_and_texture_exist", ResourceTests::itemModelAndTextureExist);
+        tests.add("resources/config_tooltip_shows_default_and_range", ResourceTests::configTooltipShowsDefaultAndRange);
     }
 
     private static InputStream open(String path) {
@@ -120,6 +123,36 @@ public final class ResourceTests {
             helper.fail("texture cannot be read: " + e.getMessage());
         }
         helper.succeed();
+    }
+
+    /**
+     * The tooltip of the durability option in the config screen (Cloth Config, Fabric) shows the real default and range
+     * in every language that translates it.
+     */
+    public static void configTooltipShowsDefaultAndRange(GameTestHelper helper) {
+        String option = "text.autoconfig.woodenshears.option.DURABILITY.@Tooltip";
+        int checked = 0;
+        for (String language : shippedLanguages(helper)) {
+            JsonObject lang = readJson(helper, LANG_DIR + language + ".json");
+            if (lang.has(option + "[3]")) {
+                String range = lang.get(option + "[3]").getAsString();
+                helper.assertTrue(containsNumber(range, IConfigHelper.DURABILITY_MIN) && containsNumber(range, IConfigHelper.DURABILITY_MAX),
+                        language + ": range tooltip \"" + range + "\" does not show " + IConfigHelper.DURABILITY_MIN + " - " + IConfigHelper.DURABILITY_MAX);
+            }
+            if (lang.has(option + "[4]")) {
+                String defaultValue = lang.get(option + "[4]").getAsString();
+                helper.assertTrue(containsNumber(defaultValue, IConfigHelper.DURABILITY_DEFAULT),
+                        language + ": default tooltip \"" + defaultValue + "\" does not show " + IConfigHelper.DURABILITY_DEFAULT);
+                checked++;
+            }
+        }
+        helper.assertTrue(checked > 0, "no language translates the config tooltip");
+        helper.succeed();
+    }
+
+    /** @return true if the text contains the number as a whole number (not only as part of another number) */
+    private static boolean containsNumber(String text, int number) {
+        return Pattern.compile("(?<!\\d)" + number + "(?!\\d)").matcher(text).find();
     }
 
 }

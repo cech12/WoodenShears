@@ -12,6 +12,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -46,7 +47,9 @@ public final class ItemTests {
         tests.add("item/is_in_common_shears_tag", ItemTests::isInCommonShearsTag);
         tests.add("item/is_enchantable_like_vanilla_shears", ItemTests::isEnchantableLikeVanillaShears);
         tests.add("item/mines_like_vanilla_shears", ItemTests::minesLikeVanillaShears);
+        tests.add("item/has_the_components_of_vanilla_shears", ItemTests::hasTheComponentsOfVanillaShears);
         tests.add("item/loses_durability_per_block_like_vanilla_shears", ItemTests::losesDurabilityPerBlockLikeVanillaShears);
+        tests.add("item/mending_repairs_like_vanilla_shears", ItemTests::mendingRepairsLikeVanillaShears);
         tests.add("item/is_fuel_like_wooden_tools", ItemTests::isFuelLikeWoodenTools);
         tests.add("item/burns_in_furnace", ItemTests::burnsInFurnace);
     }
@@ -110,6 +113,34 @@ public final class ItemTests {
         helper.succeed();
     }
 
+    /**
+     * Components that are allowed to differ from vanilla shears: name, model, the durability (config) and the fuel
+     * (wooden shears burn like wooden tools, tested by isFuelLikeWoodenTools).
+     */
+    private static final java.util.Set<net.minecraft.core.component.DataComponentType<?>> OWN_COMPONENTS = java.util.Set.of(
+            DataComponents.ITEM_NAME, DataComponents.ITEM_MODEL, DataComponents.MAX_DAMAGE, DataComponents.DAMAGE, DataComponents.COOKING_FUEL);
+
+    /**
+     * Wooden shears have all default components of vanilla shears with the same values (tool rules incl. breaking
+     * blocks in creative, stack size, enchantability, repair cost, rarity, ...), except name, model, durability and fuel. A
+     * new property of vanilla shears in a future Minecraft version is noticed here.
+     */
+    public static void hasTheComponentsOfVanillaShears(GameTestHelper helper) {
+        var mod = TestUtils.woodenShearsItem().components();
+        var vanilla = Items.SHEARS.components();
+        java.util.Set<net.minecraft.core.component.DataComponentType<?>> types = new java.util.HashSet<>(mod.keySet());
+        types.addAll(vanilla.keySet());
+        types.removeAll(OWN_COMPONENTS);
+        List<String> differences = new ArrayList<>();
+        for (var type : types) {
+            if (!Objects.equals(mod.get(type), vanilla.get(type))) {
+                differences.add(type + ": " + mod.get(type) + " instead of " + vanilla.get(type));
+            }
+        }
+        helper.assertTrue(differences.isEmpty(), "components differ from vanilla shears: " + differences);
+        helper.succeed();
+    }
+
     /** Wooden shears have the same mining speed and "correct tool" behavior as vanilla shears for every block. */
     public static void minesLikeVanillaShears(GameTestHelper helper) {
         ItemStack wooden = TestUtils.woodenShears();
@@ -129,8 +160,9 @@ public final class ItemTests {
     }
 
     /**
-     * #40: breaking a block costs the same durability as with vanilla shears for every block (1 for blocks with
-     * hardness, nothing for instantly broken blocks like fire).
+     * Breaking a block costs the same durability as with vanilla shears for every block: 1 for every block except fire,
+     * also for blocks without hardness like grass (#40 asked for no loss on such blocks and was closed in favor of the
+     * vanilla behavior).
      */
     public static void losesDurabilityPerBlockLikeVanillaShears(GameTestHelper helper) {
         ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, ItemStack.EMPTY);
@@ -152,6 +184,32 @@ public final class ItemTests {
         }
         helper.assertTrue(damaging > 0, "test setup broken: vanilla shears lose no durability on any block");
         helper.assertTrue(differences.isEmpty(), "durability loss when breaking blocks differs from vanilla shears: " + differences);
+        helper.succeed();
+    }
+
+    /**
+     * Mending repairs damaged wooden shears with experience exactly like vanilla shears (the max damage comes from the
+     * config, not from the item). Shears repaired to full durability store the same components as vanilla shears.
+     */
+    public static void mendingRepairsLikeVanillaShears(GameTestHelper helper) {
+        var mending = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.MENDING);
+        List<ItemStack> repaired = new ArrayList<>();
+        for (int damage : new int[] {30, 2}) { // 10 xp repair 20 durability: 30 stays partially damaged
+            for (ItemStack prototype : List.of(TestUtils.woodenShears(), new ItemStack(Items.SHEARS))) {
+                ItemStack stack = prototype.copy();
+                stack.setDamageValue(damage);
+                stack.enchant(mending, 1);
+                ServerPlayer player = TestUtils.player(helper, GameType.SURVIVAL, stack);
+                new ExperienceOrb(helper.getLevel(), player.getX(), player.getY(), player.getZ(), 10).playerTouch(player);
+                repaired.add(player.getMainHandItem());
+            }
+        }
+        helper.assertTrue(repaired.get(0).getDamageValue() > 0 && repaired.get(0).getDamageValue() < 30,
+                "mending did not partially repair wooden shears: damage " + repaired.get(0).getDamageValue());
+        helper.assertValueEqual(repaired.get(0).getDamageValue(), repaired.get(1).getDamageValue(), "damage of wooden shears after mending compared to vanilla shears");
+        TestUtils.assertDamage(helper, repaired.get(2), 0, "after mending to full durability");
+        helper.assertValueEqual(TestUtils.storedComponentTypes(repaired.get(2)), TestUtils.storedComponentTypes(repaired.get(3)),
+                "stored components of wooden shears mended to full durability compared to vanilla shears");
         helper.succeed();
     }
 

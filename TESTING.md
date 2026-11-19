@@ -102,8 +102,9 @@ test mod (`woodenshears_gametest`), on NeoForge it is part of the main mod. It i
 4. Run `./gradlew runGameTestServer` and make sure the test fails if the feature is broken.
 5. Add the test to the feature table below.
 
-`GameTestHelper#assertValueEqual(value, expected, name)` of Minecraft 26.1 and older prints the two values the wrong
-way round in its failure message ("Expected <name> to be <value>: was <expected>", fixed in 26.2). Pass and fail are
+In Minecraft 1.21.11 `GameTestHelper#assertValueEqual` takes `(expected, actual, name)`. The tests pass the actual
+value first (signature `(value, expected, name)` of 26.x), so a failure message reads "Expected <name> to be <actual
+value>: was <expected value>". Pass and fail are
 not affected, only read the message accordingly.
 
 If a test reveals a bug that cannot be fixed in the same change, wrap the assertions in
